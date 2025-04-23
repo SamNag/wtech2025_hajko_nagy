@@ -35,12 +35,15 @@
             </form>
 
             <div class="hidden md:flex flex items-center space-x-4 mr-2">
-                <a href="{{ route('login') }}"
+                <a href="{{ Auth::check() ? (Auth::user()->is_admin ? route('admin') : route('profile')) : route('login') }}"
                    class="classic-clicked flex items-center justify-center text-black font-bold rounded-lg h-12 w-12 fa-regular fa-user fa-lg"
                    style="color: #666666;"></a>
                 <a href="{{ route('cart') }}"
-                   class="classic-clicked flex items-center justify-center text-black font-bold rounded-lg h-12 w-12 fa-regular fa-bag-shopping fa-lg"
-                   style="color: #666666;"></a>
+                   class="classic-clicked flex items-center justify-center text-black font-bold rounded-lg h-12 w-12 relative"
+                   style="color: #666666;">
+                    <i class="fa-solid fa-cart-shopping fa-lg"></i>
+                    <span id="cart-count-products" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                </a>
             </div>
         </nav>
 
@@ -80,8 +83,21 @@
                     <li><a href="{{ route('products') }}" class="inconsolata-regular hover:text-gray-500 text-xl">Products</a></li>
                     <li><a href="{{ route('contact') }}" class="inconsolata-regular hover:text-gray-500 text-xl">Contact</a></li>
                     <li><a href="{{ route('about') }}" class="inconsolata-regular hover:text-gray-500 text-xl">About</a></li>
-                    <li><a href="{{ route('login') }}" class="inconsolata-regular hover:text-gray-500 text-xl">Profile</a></li>
-                    <li><a href="{{ route('cart') }}" class="inconsolata-regular hover:text-gray-500 text-xl">Cart</a></li>
+                    <li><a href="{{ Auth::check() ? (Auth::user()->is_admin ? route('admin') : route('profile')) : route('login') }}" class="inconsolata-regular hover:text-gray-500 text-xl">{{ Auth::check() ? (Auth::user()->is_admin ? 'Admin' : 'Profile') : 'Login' }}</a></li>
+                    @auth
+                        <li>
+                            <form method="POST" action="{{ route('logout') }}" class="inline">
+                                @csrf
+                                <button type="submit" class="inconsolata-regular hover:text-gray-500 text-xl">Logout</button>
+                            </form>
+                        </li>
+                    @endauth
+                    <li>
+                        <a href="{{ route('cart') }}" class="inconsolata-regular hover:text-gray-500 text-xl relative">
+                            Cart
+                            <span id="cart-count-products-mobile" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                        </a>
+                    </li>
                 </ul>
             </div>
         </nav>
@@ -187,12 +203,12 @@
                     @foreach($products as $product)
                         <div class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 px-4 mt-8 product-card">
                             <div class="relative flex flex-col items-center product-card-body cursor-pointer">
-                                <div class="relative z-10 -mb-10 -mr-20">
-                                    <img src="{{ asset($product->image1) }}" alt="{{ $product->name }}"
-                                         class="preview-image w-full h-32 lg:h-40 xl:h-48 object-contain opacity-[.85]">
+                                <div class="relative z-10 -mb-8 -mr-20">
+                                    <img src="{{ asset($product->image1) }}" alt="{{ $product->name }} "
+                                         class="w-full h-32 lg:h-38 xl:h-44 object-contain opacity-[.85] hover:opacity-90 hover:scale-105 transition-transform duration-300">
                                 </div>
                                 <div class="bg-gradient-to-tl from-gray-300 to-gray-200 rounded-lg p-4 pt-6 max-w-xs w-full border border-slate-200 shadow-sm relative hover:shadow-md transition-all duration-300">
-                                    <h2 class="passion-one-regular animated-gradient text-xl md:text-2xl truncate" title="{{ $product->name }}">{{ $product->name }}</h2>
+                                    <h2 class="passion-one-regular animated-gradient text-xl md:text-2xl truncate" title="{{ $product->name }}">{{ $product->name }} </h2>
                                     <p class="inconsolata-regular text-md md:text-lg">Price: {{ $product->packages->min('price') }} €</p>
                                     <div class="flex flex-wrap mt-1">
                                         @foreach($product->tags as $tag)

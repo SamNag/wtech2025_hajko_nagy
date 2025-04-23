@@ -21,12 +21,16 @@
                 </label>
             </div>
 
-            <a href={{ route("logout") }} class="flex text-center items-center classic-clicked flex-1 basis-1/4 max-w-1/4 h-12 items-center justify-center rounded-lg">
-                <span class="icon-button ">
+            <form action="{{ route('logout') }}" method="POST" class="flex-1 basis-1/4 max-w-1/4 mt-4">
+                @csrf
+                <button type="submit" class="flex text-center items-center classic-clicked w-full h-12 items-center justify-center rounded-lg">
+                <span class="icon-button">
                     <i class="fa-solid fa-arrow-right-from-bracket mr-2"></i>
                 </span>
-                <span class="hidden sm:block">Logout</span>
-            </a>
+                    <span class="hidden sm:block">Logout</span>
+                </button>
+            </form>
+
         </div>
 
         <!-- Profile Section -->

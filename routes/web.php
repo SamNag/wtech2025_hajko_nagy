@@ -5,6 +5,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
@@ -29,11 +30,37 @@ Route::post('/cart/sync', [CartController::class, 'sync'])->name('cart.sync');
 Route::get('/checkout', [OrderController::class, 'checkout'])->name('checkout');
 Route::post('/place-order', [OrderController::class, 'store'])->name('order.store');
 
-// Admin routes
-Route::get('/admin', [AdminController::class, 'index'])->name('admin')->middleware(['auth', 'admin']);
-Route::get('/admin/products', [AdminController::class, 'products'])->name('admin.products')->middleware(['auth', 'admin']);
-Route::get('/admin/orders', [AdminController::class, 'orders'])->name('admin.orders')->middleware(['auth', 'admin']);
-Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users')->middleware(['auth', 'admin']);
+Route::middleware(['auth'])->prefix('admin')->group(function () {
+    Route::get('/', function (Request $request) {
+        // Check if user is admin
+        if (!auth()->user()->is_admin) {
+            return redirect('/')->with('error', 'You do not have admin access.');
+        }
+
+        return app(AdminController::class)->index($request);
+    })->name('admin');
+
+    Route::get('/products', function (Request $request) {
+        if (!auth()->user()->is_admin) {
+            return redirect('/')->with('error', 'You do not have admin access.');
+        }
+        return app(AdminController::class)->products($request);
+    })->name('admin.products');
+
+    Route::get('/orders', function (Request $request) {
+        if (!auth()->user()->is_admin) {
+            return redirect('/')->with('error', 'You do not have admin access.');
+        }
+        return app(AdminController::class)->orders($request);
+    })->name('admin.orders');
+
+    Route::get('/users', function (Request $request) {
+        if (!auth()->user()->is_admin) {
+            return redirect('/')->with('error', 'You do not have admin access.');
+        }
+        return app(AdminController::class)->users($request);
+    })->name('admin.users');
+});
 
 // Authentication & User Profile
 Route::middleware('auth')->group(function () {

@@ -8,6 +8,7 @@ use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
@@ -29,10 +30,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Add loggedIn param to trigger cart sync
-        return redirect()->intended(
-            RouteServiceProvider::HOME . '?loggedIn=true'
-        );
+        // Check if user is admin and redirect accordingly
+        if ($request->user()->is_admin) {
+            return redirect()->intended(route('admin'));
+        } else {
+            return redirect()->intended(route('profile', ['loggedIn' => 'true']));
+        }
     }
 
     /**

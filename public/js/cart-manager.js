@@ -1,14 +1,34 @@
 /**
  * Cart Manager - Handles cart operations using localStorage for guest users and API for authenticated users
  */
+/**
+ * Enhanced Cart Manager - Handles cart operations using localStorage for guest users and API for authenticated users
+ * Now supports multiple header layouts with different cart count indicators
+ */
 class CartManager {
     constructor() {
+        // Check authentication status from data attribute
         this.isAuthenticated = document.body.getAttribute('data-auth') === 'true';
         this.storageKey = 'flakes_cart';
-        this.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-        // Initialize the cart counts
+        // Try to get CSRF token
+        const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+        this.csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
+
+        // All possible cart count elements across different headers
+        this.cartCountSelectors = [
+            '#cart-count',               // Standard header desktop
+            '#cart-count-mobile',        // Standard header mobile
+            '#cart-count-home',          // Home header desktop
+            '#cart-count-home-mobile',   // Home header mobile
+            '#cart-count-products',      // Products header desktop
+            '#cart-count-products-mobile' // Products header mobile
+        ];
+
+        // Initialize cart counts immediately
         this.updateCartCountDisplay();
+
+        console.log(`Cart Manager initialized. Auth status: ${this.isAuthenticated ? 'Logged in' : 'Guest'}`);
     }
 
     /**
@@ -88,16 +108,17 @@ class CartManager {
     }
 
     /**
-     * Update the cart count display in the header
+     * Update all cart count displays in the header
      * @param {number|null} count - Optional count to display
      */
     updateCartCountDisplay(count = null) {
-        const cartCount = document.getElementById('cart-count');
-        if (!cartCount) return;
-
+        // Calculate the count if not provided
         if (count === null) {
             if (this.isAuthenticated) {
-                // If authenticated but no count provided, we won't update
+                // For authenticated users, fetch the count from server
+                this.fetchCartCount().then(serverCount => {
+                    this.updateAllCountElements(serverCount);
+                });
                 return;
             } else {
                 // Calculate from localStorage for guests
@@ -105,12 +126,50 @@ class CartManager {
             }
         }
 
-        cartCount.textContent = count;
+        // Update all possible cart count elements
+        this.updateAllCountElements(count);
+    }
 
-        if (count > 0) {
-            cartCount.classList.remove('hidden');
-        } else {
-            cartCount.classList.add('hidden');
+    /**
+     * Update all cart count elements with the provided count
+     * @param {number} count - Count to display
+     */
+    updateAllCountElements(count) {
+        // Find all cart count elements across different headers
+        this.cartCountSelectors.forEach(selector => {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.textContent = count;
+
+                if (count > 0) {
+                    element.classList.remove('hidden');
+                } else {
+                    element.classList.add('hidden');
+                }
+            }
+        });
+    }
+
+    /**
+     * Fetch cart count from server
+     * @returns {Promise<number>} - Cart count
+     */
+    async fetchCartCount() {
+        try {
+            const response = await fetch('/cart/items', {
+                headers: {
+                    'X-CSRF-TOKEN': this.csrfToken
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch cart items');
+
+            const data = await response.json();
+            const items = data.cart_items || [];
+            return items.reduce((total, item) => total + item.quantity, 0);
+        } catch (error) {
+            console.error('Error fetching cart count:', error);
+            return 0;
         }
     }
 
@@ -213,12 +272,19 @@ class CartManager {
      * @returns {Promise} - Promise resolving to success status
      */
     async syncCart() {
-        if (!this.isAuthenticated) return { success: false, message: 'User not authenticated' };
+        if (!this.isAuthenticated) {
+            console.warn('Cannot sync cart: User not authenticated');
+            return { success: false, message: 'User not authenticated' };
+        }
 
         const localCart = this.getLocalCart();
-        if (localCart.length === 0) return { success: true, message: 'No items to sync' };
+        if (localCart.length === 0) {
+            console.log('No items to sync from local storage');
+            return { success: true, message: 'No items to sync' };
+        }
 
         try {
+            console.log('Syncing cart items to server:', localCart);
             const response = await fetch('/cart/sync', {
                 method: 'POST',
                 headers: {
@@ -240,6 +306,7 @@ class CartManager {
             // Clear local cart after successful sync
             localStorage.removeItem(this.storageKey);
             this.updateCartCountDisplay(data.cart_count);
+            console.log('Cart synced successfully to server');
 
             return { success: true, message: 'Cart synced successfully' };
         } catch (error) {
@@ -264,7 +331,7 @@ class CartManager {
                 if (!response.ok) throw new Error('Failed to fetch cart items');
 
                 const data = await response.json();
-                return data.cart_items;
+                return data.cart_items || [];
             } catch (error) {
                 console.error('Error fetching cart items:', error);
                 return [];
@@ -278,3 +345,29 @@ class CartManager {
 
 // Create a global instance
 window.cartManager = new CartManager();
+
+// Initialize cart sync on pages with login success parameter
+document.addEventListener('DOMContentLoaded', function() {
+    // Set auth status on the body for cart manager if not already set
+    if (!document.body.hasAttribute('data-auth')) {
+        // Default to guest if not set
+        document.body.setAttribute('data-auth', 'false');
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('loggedIn') && window.cartManager && document.body.getAttribute('data-auth') === 'true') {
+        console.log('Detected login success. Syncing cart...');
+        window.cartManager.syncCart()
+            .then(result => {
+                if (result.success) {
+                    console.log('Cart synced successfully after login');
+                    // Remove the URL parameter to prevent repeated syncs
+                    const newUrl = window.location.pathname;
+                    window.history.replaceState({}, document.title, newUrl);
+                }
+            })
+            .catch(error => {
+                console.error('Error during cart sync after login:', error);
+            });
+    }
+});

@@ -21,11 +21,15 @@
                 <a href="{{ route('contact') }}" class="inconsolata-regular hover:text-gray-100 text-xl">Contact -</a>
             </div>
             <div class="hidden md:flex flex items-center space-x-4 mr-2">
-                <a href="{{ route('login') }}"
+                <a href="{{ Auth::check() ? (Auth::user()->is_admin ? route('admin') : route('profile')) : route('login') }}"
                    class="flex items-center justify-center text-blue-200 hover:text-gray-100 font-bold rounded-lg h-12 w-12 fa-regular fa-user fa-lg"></a>
                 <a href="{{ route('cart') }}"
-                   class="flex items-center justify-center text-blue-200 hover:text-gray-100 font-bold rounded-lg h-12 w-12 fa-regular fa-bag-shopping fa-lg"></a>
+                   class="flex items-center justify-center text-blue-200 hover:text-gray-100 font-bold rounded-lg h-12 w-12 relative">
+                    <i class="fa-solid fa-cart-shopping fa-lg"></i>
+                    <span id="cart-count-home" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                </a>
             </div>
+
         </nav>
 
         <nav class="bg-transparent md:hidden px-4">
@@ -48,8 +52,21 @@
                         <li><a href="{{ route('products') }}" class="block py-2 px-3 inconsolata-regular text-xl text-blue-200 hover:text-white">Products</a></li>
                         <li><a href="{{ route('contact') }}" class="block py-2 px-3 inconsolata-regular text-xl text-blue-200 hover:text-white">Contact</a></li>
                         <li><a href="{{ route('about') }}" class="block py-2 px-3 inconsolata-regular text-xl text-blue-200 hover:text-white">About</a></li>
-                        <li><a href="{{ route('login') }}" class="block py-2 px-3 inconsolata-regular text-xl text-blue-200 hover:text-white">Profile</a></li>
-                        <li><a href="{{ route('cart') }}" class="block py-2 px-3 inconsolata-regular text-xl text-blue-200 hover:text-white">Cart</a></li>
+                        <li><a href="{{ Auth::check() ? (Auth::user()->is_admin ? route('admin') : route('profile')) : route('login') }}" class="block py-2 px-3 inconsolata-regular text-xl text-blue-200 hover:text-white">{{ Auth::check() ? (Auth::user()->is_admin ? 'Admin' : 'Profile') : 'Login' }}</a></li>
+                        @auth
+                            <li>
+                                <form method="POST" action="{{ route('logout') }}" class="inline">
+                                    @csrf
+                                    <button type="submit" class="block py-2 px-3 inconsolata-regular text-xl text-blue-200 hover:text-white">Logout</button>
+                                </form>
+                            </li>
+                        @endauth
+                        <li>
+                            <a href="{{ route('cart') }}" class="block py-2 px-3 inconsolata-regular text-xl text-blue-200 hover:text-white relative">
+                                Cart
+                                <span id="cart-count-home-mobile" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>

@@ -6,12 +6,18 @@
       <a href="about.blade.php" class="inconsolata-regular hover:text-gray-500 text-xl">About -</a>
       <a href="contact.blade.php" class="inconsolata-regular hover:text-gray-500 text-xl">Contact -</a>
     </div>
-    <div class="hidden md:flex flex items-center space-x-4 mr-2">
-      <a href="login.blade.php"
-         class="classic-clicked flex items-center justify-center text-gray-600 font-bold rounded-lg h-12 w-12 fa-regular fa-user fa-lg"></a>
-      <a href="cart.blade.php"
-         class="classic-clicked flex items-center justify-center text-gray-600 font-bold rounded-lg h-12 w-12 fa-regular fa-bag-shopping fa-lg"></a>
-    </div>
+      <div class="hidden md:flex flex items-center space-x-4 mr-2">
+          <a href="{{ Auth::check() ? (Auth::user()->is_admin ? route('admin') : route('profile')) : route('login') }}"
+             class="classic-clicked flex items-center justify-center text-black font-bold rounded-lg h-12 w-12 fa-regular fa-user fa-lg"
+             style="color: #666666;"></a>
+          <a href="{{ route('cart') }}"
+             class="classic-clicked flex items-center justify-center text-black font-bold rounded-lg h-12 w-12 relative"
+             style="color: #666666;">
+              <i class="fa-solid fa-cart-shopping fa-lg"></i>
+              <span id="cart-count-products" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+          </a>
+      </div>
+
   </nav>
 
   <nav class="bg-gray-200 md:hidden px-4">
@@ -29,15 +35,28 @@
                 d="M1 1h15M1 7h15M1 13h15"/>
         </svg>
       </button>
-      <div class="hidden w-full md:block md:w-auto items-center" id="navbar-default">
-        <ul class="font-medium flex flex-col items-center p-4 md:p-0 mt-4 bg-gray-200 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:bg-gray-200">
-          <li><a href="products.blade.php" class="inconsolata-regular hover:text-gray-500 text-xl">Products</a></li>
-          <li><a href="contact.blade.php" class="inconsolata-regular hover:text-gray-500 text-xl">Contact</a></li>
-          <li><a href="about.blade.php" class="inconsolata-regular hover:text-gray-500 text-xl">About</a></li>
-          <li><a href="login.blade.php" class="inconsolata-regular hover:text-gray-500 text-xl">Profile</a></li>
-          <li><a href="cart.blade.php" class="inconsolata-regular hover:text-gray-500 text-xl">Cart</a></li>
-        </ul>
-      </div>
+        <div class="hidden w-full md:block md:w-auto items-center" id="navbar-default">
+            <ul class="font-medium flex flex-col items-center p-4 md:p-0 mt-4 b bg-gray-200 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:bg-gray-200">
+                <li><a href="{{ route('products') }}" class="inconsolata-regular hover:text-gray-500 text-xl">Products</a></li>
+                <li><a href="{{ route('contact') }}" class="inconsolata-regular hover:text-gray-500 text-xl">Contact</a></li>
+                <li><a href="{{ route('about') }}" class="inconsolata-regular hover:text-gray-500 text-xl">About</a></li>
+                <li><a href="{{ Auth::check() ? (Auth::user()->is_admin ? route('admin') : route('profile')) : route('login') }}" class="inconsolata-regular hover:text-gray-500 text-xl">{{ Auth::check() ? (Auth::user()->is_admin ? 'Admin' : 'Profile') : 'Login' }}</a></li>
+                @auth
+                    <li>
+                        <form method="POST" action="{{ route('logout') }}" class="inline">
+                            @csrf
+                            <button type="submit" class="inconsolata-regular hover:text-gray-500 text-xl">Logout</button>
+                        </form>
+                    </li>
+                @endauth
+                <li>
+                    <a href="{{ route('cart') }}" class="inconsolata-regular hover:text-gray-500 text-xl relative">
+                        Cart
+                        <span id="cart-count-home-mobile" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
     </div>
   </nav>
 </header>
