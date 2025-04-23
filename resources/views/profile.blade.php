@@ -1,29 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" type="image/png" href="../assets/icon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Passion+One:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        @media (max-width: 427px) {
-            .custom-text { text-align: start; }
-            .custom-margin {margin-top: 0.5rem; }
-        }
-        @media (min-width: 428px) {
-            .custom-text { text-align: end; }
-            .custom-margin {margin-top: 1.5rem; }
-        }
-    </style>
-</head>
-<body class="bg-gray-200 pt-28 inconsolata-regular">
+@extends('layouts.main')
+
+@section('content')
+
 <div id="header-container"></div>
 <div class="max-w-screen-lg mx-auto mb-10">
     <div class="flex flex-col bg-gray-200 p-6 gap-5">
@@ -43,7 +21,7 @@
                 </label>
             </div>
 
-            <a href="home.blade.php" class="flex text-center items-center classic-clicked flex-1 basis-1/4 max-w-1/4 h-12 items-center justify-center rounded-lg">
+            <a href={{ route("logout") }} class="flex text-center items-center classic-clicked flex-1 basis-1/4 max-w-1/4 h-12 items-center justify-center rounded-lg">
                 <span class="icon-button ">
                     <i class="fa-solid fa-arrow-right-from-bracket mr-2"></i>
                 </span>
@@ -123,8 +101,7 @@
 
     </div>
 </div>
-</body>
-</html>
+@endsection
 
 <script src="https://unpkg.com/@material-tailwind/html@2.3.2/scripts/collapse.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>

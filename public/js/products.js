@@ -48,7 +48,7 @@ const products = [
     new Product(4, "Lecithin", 13.6, "../assets/images/copper.png", "oils", ["5ml", "10ml", "30ml"], ["brain", "liver"]),
     new Product(5, "Multi mineral", 19.8, "../assets/images/grape.png", "minerals", ["30pcs", "60pcs"], ["immunity", "digestion"]),
     new Product(6, "Selenium", 14.4, "../assets/images/hemp.png", "minerals", ["30pcs", "60pcs"], ["thyroid", "antioxidant"]),
-    new Product(7, "Zinc", 23.2, "../assets/images/kril.png", "minerals", ["30pcs", "90pcs"], ["skin", "immunity"]),
+    new Product(7, "Zinc", 23.2, "../assets/images/krill.png", "minerals", ["30pcs", "90pcs"], ["skin", "immunity"]),
     // Additional products can be added here
 ];
 
