@@ -159,6 +159,7 @@
                                     <p class="text-start text-md md:text-lg">{{ isset($order->address) ? $order->address->street : 'No address' }}</p>
                                     <p class="text-start text-md md:text-lg">{{ isset($order->address) ? $order->address->zip . ' ' . $order->address->city : '' }}</p>
                                     <p class="text-start text-md md:text-lg">{{ isset($order->address) ? $order->address->country : '' }}</p>
+                                    <p class="text-start text-md md:text-lg first-letter:uppercase">{{ isset($order->delivery_type) ? $order->delivery_type : 'No delivery type' }}</p>
                                 </div>
 
                                 <div class="flex flex-col flex-auto h-full flex-grow text-nowrap text-end">
@@ -191,7 +192,7 @@
     <style>
         @media (max-width: 427px) {
             .custom-text { text-align: start; }
-            .custom-margin {margin-top: 0.5rem; }
+            .custom-margin {margin-top: 1rem; }
         }
         @media (min-width: 428px) {
             .custom-text { text-align: end; }
