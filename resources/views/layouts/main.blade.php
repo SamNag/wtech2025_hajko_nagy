@@ -38,7 +38,6 @@
 <!-- Base Scripts -->
 <script src="{{ asset('js/cart-manager.js') }}"></script>
 <script src="{{ asset('js/cart-initializer.js') }}"></script>
-<script src="{{ asset('js/navbar.js') }}"></script>
 
 <script src="https://unpkg.com/@material-tailwind/html@2.3.2/scripts/collapse.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
