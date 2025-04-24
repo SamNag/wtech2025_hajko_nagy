@@ -11,7 +11,7 @@
                class="classic-clicked flex items-center justify-center text-gray-600 font-bold rounded-lg h-12 w-12 fa-regular fa-user fa-lg"></a>
             <a href="{{ route('cart') }}"
                class="classic-clicked flex items-center justify-center text-gray-600 font-bold rounded-lg h-12 w-12 relative">
-                <i class="fa-regular fa-bag-shopping fa-lg"></i>
+                <i class="fa-solid fa-cart-shopping fa-lg"></i>
                 @php
                     $cartCount = 0;
                     if (auth()->check()) {

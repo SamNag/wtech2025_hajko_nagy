@@ -70,3 +70,19 @@
         </div>
     </div>
 @endsection
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // If there's a success URL parameter, the user just logged in
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('loggedIn') && window.cartManager) {
+                // Sync the cart from localStorage to the database
+                window.cartManager.syncCart().then(result => {
+                    if (result.success) {
+                        console.log('Cart synced successfully');
+                    }
+                });
+            }
+        });
+    </script>
+@endpush

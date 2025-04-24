@@ -11,6 +11,8 @@ class OrderItem extends Model
     use HasFactory;
 
     public $incrementing = false;
+    public $timestamps = false;
+
     protected $keyType = 'string';
 
     protected $fillable = ['order_id', 'package_id', 'quantity'];

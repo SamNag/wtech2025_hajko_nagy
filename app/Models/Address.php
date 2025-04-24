@@ -12,7 +12,7 @@ class Address extends Model
 
     public $incrementing = false;
     protected $keyType = 'string';
-
+    public $timestamps = false;
     protected $fillable = ['street', 'city', 'zip', 'country'];
 
     protected static function boot()

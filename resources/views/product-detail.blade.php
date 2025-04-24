@@ -3,11 +3,12 @@
 @section('content')
     <div class="container mx-auto pt-28 px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col md:flex-row md:space-x-8 lg:space-x-12 items-center justify-center">
-            <!-- Product Image Section -->
+            <!-- Product Image Section with Fixed Height -->
             <div class="w-full sm:w-3/4 md:w-2/5 lg:w-1/3 flex flex-col items-center mb-8 md:mb-0">
-                <div class="w-full flex justify-center">
+                <!-- Fixed height container for main image -->
+                <div class="w-full h-64 sm:h-80 md:h-96 flex items-center justify-center">
                     <img id="main-image" src="{{ asset('storage/' . $product->image1) }}" alt="{{ $product->name }}"
-                         class="w-4/5 sm:w-full max-w-md object-contain hover:scale-105 transition-transform duration-300">
+                         class="max-h-full max-w-full object-contain hover:scale-105 transition-transform duration-300">
                 </div>
 
                 <!-- Thumbnail Images -->
@@ -19,7 +20,7 @@
                 </div>
             </div>
 
-            <!-- Product Details Section -->
+            <!-- Product Details Section (unchanged) -->
             <div class="w-full sm:w-3/4 md:w-1/2 px-4 sm:px-6 pb-8">
                 <h1 class="passion-one-regular animated-gradient text-2xl sm:text-3xl md:text-4xl text-center md:text-left">{{ $product->name }}</h1>
                 <p class="inconsolata-regular text-md sm:text-lg mt-4 max-w-lg text-center md:text-left">

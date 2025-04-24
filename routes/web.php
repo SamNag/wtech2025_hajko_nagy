@@ -27,8 +27,11 @@ Route::delete('/cart/remove/{item}', [CartController::class, 'remove'])->name('c
 Route::patch('/cart/update', [CartController::class, 'update'])->name('cart.update');
 Route::get('/cart/items', [CartController::class, 'getItems'])->name('cart.items');
 Route::post('/cart/sync', [CartController::class, 'sync'])->name('cart.sync');
+// Checkout process
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
-Route::post('/place-order', [CheckoutController::class, 'process'])->name('checkout.process');
+Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
+Route::get('/order/confirmation/{order}', [CheckoutController::class, 'confirmation'])->name('orders.confirmation');
+
 
 Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::get('/', function (Request $request) {

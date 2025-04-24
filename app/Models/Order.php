@@ -12,7 +12,18 @@ class Order extends Model
 
     public $incrementing = false;
     protected $keyType = 'string';
-    protected $fillable = ['user_id', 'address_id', 'payment', 'status'];
+
+    protected $fillable = [
+        'user_id',
+        'address_id',
+        'payment',
+        'status',
+        'price',
+        'delivery_type',
+        'guest_name',
+        'guest_email',
+        'guest_phone'
+    ];
 
     protected static function boot()
     {
@@ -22,7 +33,23 @@ class Order extends Model
         });
     }
 
+    /**
+     * Get the status label for display
+     */
+    public function getStatusLabelAttribute()
+    {
+        $statuses = [
+            'pending' => 'Order Received',
+            'processing' => 'Processing',
+            'shipped' => 'Shipped',
+            'delivered' => 'Delivered',
+            'canceled' => 'Canceled'
+        ];
+
+        return $statuses[$this->status] ?? $this->status;
+    }
+
     public function user() { return $this->belongsTo(User::class); }
     public function address() { return $this->belongsTo(Address::class); }
-    public function orderItems() { return $this->hasMany(OrderItem::class); }
+    public function items() { return $this->hasMany(OrderItem::class); }
 }

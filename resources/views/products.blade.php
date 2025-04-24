@@ -216,9 +216,9 @@
                                         @endforeach
                                     </div>
                                     <a href="{{ route('product.detail', $product->id) }}" class="absolute inset-0 z-10"></a>
-                                    <button class="add-to-cart-btn absolute bottom-3 right-3 bg-slate-200 hover:bg-white text-gray-100 hover:border hover:border-gray-400 rounded-full w-8 h-8 flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 z-20" data-product-id="{{ $product->id }}">
-                                        <i class="fas fa-plus text-sm text-gray-400"></i>
-                                    </button>
+{{--                                    <button class="add-to-cart-btn absolute bottom-3 right-3 bg-slate-200 hover:bg-white text-gray-100 hover:border hover:border-gray-400 rounded-full w-8 h-8 flex items-center justify-center shadow-md transition-all duration-300 hover:scale-105 z-20" data-product-id="{{ $product->id }}">--}}
+{{--                                        <i class="fas fa-plus text-sm text-gray-400"></i>--}}
+{{--                                    </button>--}}
                                 </div>
                             </div>
                         </div>
