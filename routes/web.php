@@ -3,7 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
-use App\Http\Controllers\OrderController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Illuminate\Support\Facades\Route;
@@ -27,8 +27,8 @@ Route::delete('/cart/remove/{item}', [CartController::class, 'remove'])->name('c
 Route::patch('/cart/update', [CartController::class, 'update'])->name('cart.update');
 Route::get('/cart/items', [CartController::class, 'getItems'])->name('cart.items');
 Route::post('/cart/sync', [CartController::class, 'sync'])->name('cart.sync');
-Route::get('/checkout', [OrderController::class, 'checkout'])->name('checkout');
-Route::post('/place-order', [OrderController::class, 'store'])->name('order.store');
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
+Route::post('/place-order', [CheckoutController::class, 'process'])->name('checkout.process');
 
 Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::get('/', function (Request $request) {
