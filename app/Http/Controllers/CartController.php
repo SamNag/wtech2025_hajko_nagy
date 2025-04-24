@@ -6,7 +6,8 @@ use App\Models\CartItem;
 use App\Models\Package;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
 {
@@ -81,50 +82,99 @@ class CartController extends Controller
      */
     public function add(Request $request)
     {
-        $request->validate([
-            'package_id' => 'required|uuid|exists:packages,id',
-            'quantity' => 'required|integer|min:1'
-        ]);
+        Log::info('Cart add request received', $request->all());
 
-        $packageId = $request->package_id;
-        $quantity = $request->quantity;
+        try {
+            $validated = $request->validate([
+                'package_id' => 'required|string|exists:packages,id',
+                'quantity' => 'required|integer|min:1'
+            ]);
 
-        // Get package details for response
-        $package = Package::with('product')->findOrFail($packageId);
+            $packageId = $validated['package_id'];
+            $quantity = $validated['quantity'];
 
-        if (Auth::check()) {
-            // For authenticated users, store in database
-            $cartItem = CartItem::updateOrCreate(
-                [
-                    'user_id' => Auth::id(),
-                    'package_id' => $packageId
-                ],
-                [
-                    'quantity' => \DB::raw("quantity + $quantity")
+            // Get package details for response
+            $package = Package::with('product')->findOrFail($packageId);
+
+            if (Auth::check()) {
+                // For authenticated users, store in database
+                try {
+                    Log::info('Adding to cart for authenticated user', [
+                        'user_id' => Auth::id(),
+                        'package_id' => $packageId
+                    ]);
+
+                    $existingItem = CartItem::where([
+                        'user_id' => Auth::id(),
+                        'package_id' => $packageId
+                    ])->first();
+
+                    if ($existingItem) {
+                        // If item exists, update quantity
+                        $existingItem->quantity += $quantity;
+                        $existingItem->save();
+                        Log::info('Updated existing cart item', ['item_id' => $existingItem->id, 'new_quantity' => $existingItem->quantity]);
+                    } else {
+                        // Create new cart item without timestamps
+                        $cartItem = new CartItem([
+                            'user_id' => Auth::id(),
+                            'package_id' => $packageId,
+                            'quantity' => $quantity
+                        ]);
+                        $cartItem->save();
+                        Log::info('Created new cart item', ['item_id' => $cartItem->id]);
+                    }
+
+                    $cartCount = CartItem::where('user_id', Auth::id())->sum('quantity');
+                    Log::info('Current cart count', ['count' => $cartCount]);
+
+                } catch (\Exception $e) {
+                    Log::error('Error adding to cart for authenticated user', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Error adding item to cart: ' . $e->getMessage()
+                    ], 500);
+                }
+            } else {
+                // For guest users, the front-end will handle localStorage updates
+                // Just return package details for the front-end to use
+                $cartCount = null; // Client will calculate this
+
+                Log::info('Added to cart for guest user', [
+                    'package_id' => $packageId,
+                    'quantity' => $quantity
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $package->product->name . ' added to cart',
+                'cart_count' => $cartCount ?? null,
+                'package' => [
+                    'id' => $package->id,
+                    'name' => $package->product->name,
+                    'size' => $package->size,
+                    'price' => $package->price,
+                    'quantity' => $quantity,
+                    'image' => $package->product->image1,
+                    'product_id' => $package->product->id
                 ]
-            );
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in add to cart', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
 
-            $cartCount = CartItem::where('user_id', Auth::id())->sum('quantity');
-        } else {
-            // For guest users, the front-end will handle localStorage updates
-            // Just return package details for the front-end to use
-            $cartCount = null; // Client will calculate this
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => $package->product->name . ' added to cart',
-            'cart_count' => $cartCount,
-            'package' => [
-                'id' => $package->id,
-                'name' => $package->product->name,
-                'size' => $package->size,
-                'price' => $package->price,
-                'quantity' => $quantity,
-                'image' => $package->product->image1,
-                'product_id' => $package->product->id
-            ]
-        ]);
     }
 
     /**
@@ -167,13 +217,13 @@ class CartController extends Controller
      */
     public function update(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'item_id' => 'required|string',
             'quantity' => 'required|integer|min:1'
         ]);
 
-        $itemId = $request->item_id;
-        $quantity = $request->quantity;
+        $itemId = $validated['item_id'];
+        $quantity = $validated['quantity'];
 
         if (Auth::check()) {
             // For authenticated users, update in database
@@ -215,24 +265,33 @@ class CartController extends Controller
             ], 401);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'cart_items' => 'required|array',
-            'cart_items.*.package_id' => 'required|uuid|exists:packages,id',
+            'cart_items.*.package_id' => 'required|string|exists:packages,id',
             'cart_items.*.quantity' => 'required|integer|min:1'
         ]);
 
-        $localCartItems = $request->cart_items;
+        $localCartItems = $validated['cart_items'];
 
         foreach ($localCartItems as $item) {
-            CartItem::updateOrCreate(
-                [
+            $existingItem = CartItem::where([
+                'user_id' => Auth::id(),
+                'package_id' => $item['package_id']
+            ])->first();
+
+            if ($existingItem) {
+                // Update existing item
+                $existingItem->quantity += $item['quantity'];
+                $existingItem->save();
+            } else {
+                // Create new item
+                $cartItem = new CartItem([
                     'user_id' => Auth::id(),
-                    'package_id' => $item['package_id']
-                ],
-                [
-                    'quantity' => \DB::raw("COALESCE(quantity, 0) + {$item['quantity']}")
-                ]
-            );
+                    'package_id' => $item['package_id'],
+                    'quantity' => $item['quantity']
+                ]);
+                $cartItem->save();
+            }
         }
 
         $cartCount = CartItem::where('user_id', Auth::id())->sum('quantity');

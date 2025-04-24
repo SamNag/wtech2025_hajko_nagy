@@ -1,4 +1,7 @@
-var productDetail = 1;
+// Product Detail Page - No Visual Changes
+
+// Initialize variables
+let productDetail = 1;
 
 function increaseQuantity() {
     productDetail++;
@@ -14,55 +17,68 @@ function decreaseQuantity() {
 
 function changeImage(element) {
     let mainImage = document.getElementById("main-image");
-    mainImage.src = element.src;
+    if (mainImage && element) {
+        mainImage.src = element.src;
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Set auth status on the body for cart manager
-    document.body.setAttribute('data-auth', "{{ Auth::check() ? 'true' : 'false' }}");
+    console.log("Product detail page loaded");
+
+    // Set auth status on the body for cart manager if not already set
+    if (!document.body.hasAttribute('data-auth')) {
+        // Use Laravel's Auth check from the view
+        const isAuthenticated = document.querySelector('meta[name="is-authenticated"]')?.getAttribute('content') === 'true';
+        document.body.setAttribute('data-auth', isAuthenticated ? 'true' : 'false');
+    }
+
+    const isAuthenticated = document.body.getAttribute('data-auth') === 'true';
+    console.log("Authentication status from data-auth:", isAuthenticated);
 
     // Add to cart button event listener
     const addToCartBtn = document.getElementById('add-to-cart-btn');
 
     if (addToCartBtn) {
         addToCartBtn.addEventListener('click', async function() {
-            const packageId = document.getElementById('package-select').value;
+            const packageSelect = document.getElementById('package-select');
+            if (!packageSelect) {
+                console.error('Package select element not found');
+                return;
+            }
+
+            const packageId = packageSelect.value;
             const quantity = parseInt(document.getElementById('quantity').textContent);
 
-            // Show loading state
-            const originalText = this.textContent;
-            this.textContent = 'Adding...';
+            console.log("Adding to cart:", packageId, quantity);
+
+            // No visual changes to the button
+            // Just temporarily disable to prevent multiple clicks
             this.disabled = true;
 
             try {
-                // Use the cart manager to add the item
+                // Make sure cart manager is initialized
+                if (!window.cartManager) {
+                    console.error('Cart manager not initialized');
+                    // Try to initialize it
+                    window.cartManager = new CartManager();
+                }
+
                 const result = await window.cartManager.addToCart(packageId, quantity);
 
                 if (result.success) {
-                    // Success - show confirmation
-                    this.textContent = 'Added to Cart!';
-                    this.classList.add('bg-gray-300');
+                    console.log('Successfully added to cart:', result);
                 } else {
-                    throw new Error(result.message || 'Failed to add item to cart');
+                    console.error('Error from server:', result.message);
                 }
-
-                // Reset button after 2 seconds
-                setTimeout(() => {
-                    this.textContent = originalText;
-                    this.classList.remove('bg-gray-300');
-                    this.disabled = false;
-                }, 2000);
             } catch (error) {
                 console.error('Error adding to cart:', error);
-                this.textContent = 'Error - Try Again';
-
-                // Reset button after 2 seconds
-                setTimeout(() => {
-                    this.textContent = originalText;
-                    this.disabled = false;
-                }, 2000);
             }
+
+            // Re-enable the button
+            this.disabled = false;
         });
+    } else {
+        console.warn('Add to cart button not found on this page');
     }
 
     // Package selection change handler to update price
@@ -79,17 +95,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to update price display based on selected package
     function updatePriceDisplay() {
         const selectElement = document.getElementById('package-select');
+        if (!selectElement) return;
+
         const selectedOption = selectElement.options[selectElement.selectedIndex];
+        if (!selectedOption) return;
+
         const price = selectedOption.getAttribute('data-price');
+        if (!price) return;
 
         // Format price with 2 decimal places and euro sign
-        const formattedPrice = new Intl.NumberFormat('de-DE', {
-            style: 'currency',
-            currency: 'EUR',
-            minimumFractionDigits: 2
-        }).format(price);
+        const formattedPrice = `€${parseFloat(price).toFixed(2)}`;
 
         // Update price display
-        document.getElementById('product-price').textContent = formattedPrice;
+        const priceElement = document.getElementById('product-price');
+        if (priceElement) {
+            priceElement.textContent = formattedPrice;
+        }
     }
 });

@@ -13,6 +13,9 @@ class CartItem extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
+    // Add this line to disable timestamps
+    public $timestamps = false;
+
     protected $fillable = ['user_id', 'package_id', 'quantity'];
 
     protected static function boot()
