@@ -163,7 +163,7 @@
 
                                 <div class="flex flex-col flex-auto h-full flex-grow text-nowrap text-end">
                                     <p class="text-lg md:text-xl font-bold custom-text">Total order cost:</p>
-                                    <p class="pe-1 text-md md:text-lg font-bold custom-text">€ {{ isset($order->total_amount) ? number_format($order->total_amount, 2, ',', '.') : '0,00' }}</p>
+                                    <p class="pe-1 text-md md:text-lg font-bold custom-text">€ {{ isset($order->price) ? number_format($order->price, 2, ',', '.') : '0,00' }}</p>
                                     <p class="flex-grow custom-margin text-md md:text-lg custom-text">Status:
                                         <span class="
                                         @if($order->status == 'created') text-blue-500
