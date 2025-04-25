@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-// Generate last 7 days for labels
+
 function generateLast7Days() {
     const dates = [];
     for (let i = 6; i >= 0; i--) {
@@ -31,7 +31,7 @@ function generateLast7Days() {
     return dates;
 }
 
-// Example data for earnings in the last 7 days (fluctuating values)
+
 const earningsData = Array.from({ length: 7 }, () => Math.floor(Math.random() * (500 - 100 + 1) + 100));
 
 // Example product sales data in the last 30 days (top 5 products)
@@ -49,7 +49,7 @@ new Chart(document.getElementById("salesChart"), {
             borderColor: "rgba(54, 162, 235, 1)",
             backgroundColor: "rgba(54, 162, 235, 0.2)",
             fill: true,
-            tension: 0.4, // Makes the line smooth
+            tension: 0.4,
         }]
     },
     options: {

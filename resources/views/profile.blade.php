@@ -154,8 +154,10 @@
                     @if(isset($user->orders) && $user->orders->count() > 0)
                         @foreach($user->orders as $order)
                             <div class="flex flex-wrap gap-4 sm:gap-0 w-full h-full items-start relative rounded-lg border border-gray-300 p-5">
-                                <div class="flex flex-col flex-1 basis-1/2 max-w-1/2 justify-center text-nowrap">
-                                    <p class="text-start text-lg md:text-xl font-bold">Order ID: {{ $order->id }}</p>
+                                <div class="flex flex-col flex-1 basis-1/2 w-1/2 max-w-1/2 justify-center">
+                                    <div class="overflow-hidden">
+                                        <p class="text-start text-lg md:text-xl font-bold overflow-hidden whitespace-nowrap text-ellipsis">Order ID: {{ $order->id }}</p>
+                                    </div>
                                     <p class="text-start text-md md:text-lg">{{ isset($order->address) ? $order->address->street : 'No address' }}</p>
                                     <p class="text-start text-md md:text-lg">{{ isset($order->address) ? $order->address->zip . ' ' . $order->address->city : '' }}</p>
                                     <p class="text-start text-md md:text-lg">{{ isset($order->address) ? $order->address->country : '' }}</p>
@@ -167,14 +169,14 @@
                                     <p class="pe-1 text-md md:text-lg font-bold custom-text">€ {{ isset($order->price) ? number_format($order->price, 2, ',', '.') : '0,00' }}</p>
                                     <p class="flex-grow custom-margin text-md md:text-lg custom-text">Status:
                                         <span class="
-                                        @if($order->status == 'created') text-blue-500
-                                        @elseif($order->status == 'shipped') text-orange-500
-                                        @elseif($order->status == 'delivered') text-green-500
-                                        @elseif($order->status == 'canceled') text-red-500
-                                        @endif
-                                    ">
-                                        {{ ucfirst($order->status) }}
-                                    </span>
+                            @if($order->status == 'created') text-blue-500
+                            @elseif($order->status == 'shipped') text-orange-500
+                            @elseif($order->status == 'delivered') text-green-500
+                            @elseif($order->status == 'canceled') text-red-500
+                            @endif
+                        ">
+                            {{ ucfirst($order->status) }}
+                        </span>
                                     </p>
                                 </div>
                             </div>

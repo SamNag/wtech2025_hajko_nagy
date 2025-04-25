@@ -46,9 +46,9 @@
             <div class="text-5xl text-gray-300 mb-4">
                 <i class="fas fa-shopping-cart"></i>
             </div>
-            <p class="text-xl inconsolata-bold text-gray-500">Your cart is empty</p>
-            <p class="text-gray-500 mt-2">Looks like you haven't added any products to your cart yet.</p>
-            <a href="{{ route('products') }}" class="classic-clicked text-lg inconsolata-bold text-gray-600 rounded-lg px-6 py-2 inline-block mt-6">Browse Products</a>
+            <p class="text-xl inconsolata-bold text-gray-500">Your cart is looking a bit empty</p>
+            <p class="text-gray-500 mt-2">Add some of our delicious flakes to your cart and treat yourself!</p>
+            <a href="{{ route('products') }}" class="classic-clicked text-lg inconsolata-bold text-gray-600 rounded-lg px-6 py-2 inline-block mt-6">Discover Our Products</a>
         </div>
     </template>
 
@@ -102,18 +102,27 @@
                     const cartContainer = document.getElementById('cart-container');
                     const items = await window.cartManager.getCartItems();
 
+                    console.log("Cart items:", items);
+                    console.log("Items length:", items.length);
+
                     // Clear loading placeholders
                     cartContainer.innerHTML = '';
 
+                    // Always update the total price to 0 by default
+                    document.getElementById('total-price').textContent = "€0.00";
+
                     if (items.length === 0) {
+                        console.log("Cart is empty, showing empty template");
                         // Show empty cart message
                         const template = document.getElementById('empty-cart-template');
+                        console.log("Empty template found:", template);
                         cartContainer.innerHTML = template.innerHTML;
 
-                        // Hide total and checkout button
-                        document.getElementById('total-price').parentElement.parentElement.classList.add('hidden');
+                        // Hide checkout button
                         document.getElementById('checkout-btn').parentElement.classList.add('hidden');
                         return;
+                    } else {
+                        document.getElementById('checkout-btn').parentElement.classList.remove('hidden');
                     }
 
                     // Show each cart item

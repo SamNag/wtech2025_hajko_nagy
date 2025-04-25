@@ -12,14 +12,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update cart counts
     window.cartManager.updateCartCountDisplay();
 
-    // For dynamic content loading (if you're using AJAX to load parts of the page)
     document.addEventListener('header-loaded', function() {
         console.log('Header loaded event detected, updating cart indicators');
         window.cartManager.updateCartCountDisplay();
     });
 });
 
-// Helper function to trigger header loaded event (call this after loading header via AJAX)
-function notifyHeaderLoaded() {
-    document.dispatchEvent(new CustomEvent('header-loaded'));
-}
