@@ -24,3 +24,14 @@
         </div>
     </div>
 @endsection
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Clear the cart once the order is confirmed
+            if (window.cartManager) {
+                window.cartManager.clearCart();
+                console.log('Cart cleared after successful order');
+            }
+        });
+    </script>
+@endpush

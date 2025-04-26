@@ -35,7 +35,6 @@ class ProductSeeder extends Seeder
             $imgPackage = $row['H'] !== 'null' ? $row['H'] : null;
             $description = $row['I'];
 
-            // 🛍️ Create Product
             $product = Product::create([
                 'id' => Str::uuid(),
                 'name' => $name,
@@ -45,7 +44,6 @@ class ProductSeeder extends Seeder
                 'image2' => $imgPackage ? "assets/product_images/package/{$imgPackage}.png" : null,
             ]);
 
-            // 📦 Create Packages with price adjustment
             foreach ($packageOptions as $index => $option) {
                 $size = trim($option) . $packageType;
                 $price = match ($index) {
@@ -64,7 +62,6 @@ class ProductSeeder extends Seeder
                 ]);
             }
 
-            // 🏷️ Add tags
             foreach ($tags as $tag) {
                 Tag::create([
                     'id' => Str::uuid(),

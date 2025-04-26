@@ -1,5 +1,5 @@
-// Detect if the script is being used in admin-page.blade.php
-const isAdminPage = window.location.pathname.includes("admin-page.blade.php");
+// Detect if the script is being used in admin-dashboard.blade.php
+const isAdminPage = window.location.pathname.includes("admin-dashboard.blade.php");
 
 
 // Product class for backend integration

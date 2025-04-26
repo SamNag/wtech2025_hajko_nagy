@@ -260,10 +260,3 @@ function showErrorMessage(message, parentElement) {
     errorEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-/**
- * Clear checkout errors
- */
-function clearErrors() {
-    const existingErrors = document.querySelectorAll('.checkout-error');
-    existingErrors.forEach(el => el.remove());
-}

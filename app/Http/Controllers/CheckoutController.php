@@ -171,6 +171,11 @@ class CheckoutController extends Controller
             if (!$isGuest) {
                 CartItem::where('user_id', $userId)->delete();
             }
+            // Delete session cart data for guest users
+            Session::forget('cart_data');
+
+
+
 
             // Store order ID in session for guest users to access confirmation
             if ($isGuest) {

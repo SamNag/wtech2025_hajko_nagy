@@ -70,6 +70,17 @@ class CartManager {
         }
     }
 
+    clearCart() {
+        if (this.isAuthenticated) {
+            // For authenticated users, the server already handles this
+            return;
+        } else {
+            // For guests, clear localStorage
+            localStorage.removeItem(this.storageKey);
+            this.updateCartCountDisplay(0);
+        }
+    }
+
     /**
      * Update the local cart in localStorage
      * @param {Object} packageData - Package data to save
