@@ -89,9 +89,8 @@ Route::middleware('auth')->group(function () {
     })->middleware(['throttle:6,1'])->name('verification.send');
 });
 
-// Admin routes group
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-    // Route-level admin check
+    // Route-level admin check middleware
     $adminCheck = function ($controller, $method, $parameters = []) {
         return function () use ($controller, $method, $parameters) {
             if (!auth()->user()->is_admin) {
@@ -102,7 +101,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     };
 
     // Dashboard
-    Route::get('/', $adminCheck(AdminController::class, 'index'))->name('dashboard');
+    Route::get('/admin', $adminCheck(AdminController::class, 'index'))->name('admin');
 
     // User management
     Route::get('/users', $adminCheck(AdminController::class, 'users'))->name('users');
@@ -120,6 +119,12 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('/orders', $adminCheck(AdminController::class, 'orders'))->name('orders');
     Route::get('/orders/{id}', $adminCheck(AdminController::class, 'showOrder', ['id']))->name('orders.show');
     Route::patch('/orders/{id}/status', $adminCheck(AdminController::class, 'updateOrderStatus', ['id']))->name('orders.update-status');
+
+    // Category management (new)
+    Route::get('/categories', $adminCheck(AdminController::class, 'categories'))->name('categories');
+    Route::post('/categories', $adminCheck(AdminController::class, 'storeCategory'))->name('categories.store');
+    Route::put('/categories/{id}', $adminCheck(AdminController::class, 'updateCategory', ['id']))->name('categories.update');
+    Route::delete('/categories/{id}', $adminCheck(AdminController::class, 'deleteCategory', ['id']))->name('categories.delete');
 
     // Search
     Route::get('/search', $adminCheck(AdminController::class, 'search'))->name('search');

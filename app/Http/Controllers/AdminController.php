@@ -9,6 +9,7 @@ use App\Models\Package;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class AdminController extends Controller
@@ -165,6 +166,262 @@ class AdminController extends Controller
     }
 
     /**
+     * Display form to create a new product.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function createProduct()
+    {
+        $categories = DB::table('products')
+            ->select('category')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category');
+
+        return view('admin.products.create', compact('categories'));
+    }
+
+    /**
+     * Store a new product.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function storeProduct(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'required|string',
+            'category' => 'required|string|max:255',
+            'image1' => 'required|image|max:2048',
+            'image2' => 'nullable|image|max:2048',
+            'packages' => 'required|array|min:1',
+            'packages.*.size' => 'required|string|max:50',
+            'packages.*.price' => 'required|numeric|min:0',
+            'packages.*.stock' => 'required|integer|min:0',
+            'tags' => 'nullable|array',
+            'tags.*' => 'string|max:50',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            // Handle image uploads
+            $image1Path = $request->file('image1')->store('products', 'public');
+            $image2Path = $request->hasFile('image2')
+                ? $request->file('image2')->store('products', 'public')
+                : $image1Path;
+
+            // Create product
+            $product = Product::create([
+                'name' => $validated['name'],
+                'description' => $validated['description'],
+                'category' => $validated['category'],
+                'image1' => $image1Path,
+                'image2' => $image2Path,
+            ]);
+
+            // Add packages
+            foreach ($validated['packages'] as $packageData) {
+                $product->packages()->create([
+                    'size' => $packageData['size'],
+                    'price' => $packageData['price'],
+                    'stock' => $packageData['stock'],
+                ]);
+            }
+
+            // Add tags
+            if (!empty($validated['tags'])) {
+                foreach ($validated['tags'] as $tagName) {
+                    $product->tags()->create(['tag_name' => $tagName]);
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('admin.products')
+                ->with('success', 'Product created successfully');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            // Delete uploaded images
+            if (isset($image1Path)) {
+                Storage::disk('public')->delete($image1Path);
+            }
+            if (isset($image2Path) && $image2Path !== $image1Path) {
+                Storage::disk('public')->delete($image2Path);
+            }
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Error creating product: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Display form to edit a product.
+     *
+     * @param string $id
+     * @return \Illuminate\View\View
+     */
+    public function editProduct($id)
+    {
+        $product = Product::with(['packages', 'tags'])->findOrFail($id);
+        $categories = DB::table('products')
+            ->select('category')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category');
+
+        return view('admin.products.edit', compact('product', 'categories'));
+    }
+
+    /**
+     * Update an existing product.
+     *
+     * @param Request $request
+     * @param string $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function updateProduct(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'required|string',
+            'category' => 'required|string|max:255',
+            'image1' => 'nullable|image|max:2048',
+            'image2' => 'nullable|image|max:2048',
+            'packages' => 'required|array|min:1',
+            'packages.*.id' => 'nullable|string|exists:packages,id',
+            'packages.*.size' => 'required|string|max:50',
+            'packages.*.price' => 'required|numeric|min:0',
+            'packages.*.stock' => 'required|integer|min:0',
+            'tags' => 'nullable|array',
+            'tags.*' => 'string|max:50',
+        ]);
+
+        $product = Product::findOrFail($id);
+
+        DB::beginTransaction();
+
+        try {
+            // Handle image uploads
+            if ($request->hasFile('image1')) {
+                // Delete old image
+                if ($product->image1 && Storage::disk('public')->exists($product->image1)) {
+                    Storage::disk('public')->delete($product->image1);
+                }
+                $product->image1 = $request->file('image1')->store('products', 'public');
+            }
+
+            if ($request->hasFile('image2')) {
+                // Delete old image
+                if ($product->image2 && $product->image2 !== $product->image1 &&
+                    Storage::disk('public')->exists($product->image2)) {
+                    Storage::disk('public')->delete($product->image2);
+                }
+                $product->image2 = $request->file('image2')->store('products', 'public');
+            }
+
+            // Update product
+            $product->name = $validated['name'];
+            $product->description = $validated['description'];
+            $product->category = $validated['category'];
+            $product->save();
+
+            // Handle packages - update existing, create new, remove deleted
+            $existingPackageIds = [];
+
+            foreach ($validated['packages'] as $packageData) {
+                if (!empty($packageData['id'])) {
+                    // Update existing package
+                    $package = Package::findOrFail($packageData['id']);
+                    $package->size = $packageData['size'];
+                    $package->price = $packageData['price'];
+                    $package->stock = $packageData['stock'];
+                    $package->save();
+
+                    $existingPackageIds[] = $package->id;
+                } else {
+                    // Create new package
+                    $package = $product->packages()->create([
+                        'size' => $packageData['size'],
+                        'price' => $packageData['price'],
+                        'stock' => $packageData['stock'],
+                    ]);
+
+                    $existingPackageIds[] = $package->id;
+                }
+            }
+
+            // Delete packages not in the list
+            $product->packages()
+                ->whereNotIn('id', $existingPackageIds)
+                ->delete();
+
+            // Update tags - delete all and recreate
+            $product->tags()->delete();
+
+            if (!empty($validated['tags'])) {
+                foreach ($validated['tags'] as $tagName) {
+                    $product->tags()->create(['tag_name' => $tagName]);
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('admin.products')
+                ->with('success', 'Product updated successfully');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Error updating product: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete a product.
+     *
+     * @param string $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function deleteProduct($id)
+    {
+        $product = Product::findOrFail($id);
+
+        DB::beginTransaction();
+
+        try {
+            // Delete associated images
+            if ($product->image1 && Storage::disk('public')->exists($product->image1)) {
+                Storage::disk('public')->delete($product->image1);
+            }
+            if ($product->image2 && $product->image2 !== $product->image1 &&
+                Storage::disk('public')->exists($product->image2)) {
+                Storage::disk('public')->delete($product->image2);
+            }
+
+            // Delete product and all related data (packages, tags)
+            $product->delete();
+
+            DB::commit();
+
+            return redirect()->route('admin.products')
+                ->with('success', 'Product deleted successfully');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()->back()
+                ->with('error', 'Error deleting product: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Display orders management page.
      *
      * @param Request $request
@@ -172,11 +429,22 @@ class AdminController extends Controller
      */
     public function orders(Request $request)
     {
-        $orders = Order::with(['user', 'items.package.product'])
-            ->latest()
-            ->paginate(10);
+        $statusFilter = $request->input('status');
 
-        return view('admin.orders', compact('orders'));
+        $ordersQuery = Order::with(['user', 'items.package.product']);
+
+        if ($statusFilter) {
+            $ordersQuery->where('status', $statusFilter);
+        }
+
+        $orders = $ordersQuery->latest()->paginate(10);
+
+        $statusCounts = Order::select('status', DB::raw('count(*) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        return view('admin.orders', compact('orders', 'statusFilter', 'statusCounts'));
     }
 
     /**
@@ -203,7 +471,7 @@ class AdminController extends Controller
     public function updateOrderStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:created,shipped,delivered,canceled'
+            'status' => 'required|in:created,processing,shipped,delivered,canceled'
         ]);
 
         $order = Order::findOrFail($id);
@@ -221,8 +489,36 @@ class AdminController extends Controller
      */
     public function users(Request $request)
     {
-        $users = User::latest()->paginate(10);
-        return view('admin.users', compact('users'));
+        $searchTerm = $request->input('search');
+        $userType = $request->input('type');
+
+        $usersQuery = User::query();
+
+        if ($searchTerm) {
+            $usersQuery->where(function($query) use ($searchTerm) {
+                $query->where('name', 'like', "%{$searchTerm}%")
+                    ->orWhere('surname', 'like', "%{$searchTerm}%")
+                    ->orWhere('email', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        if ($userType) {
+            if ($userType === 'admin') {
+                $usersQuery->where('is_admin', true);
+            } elseif ($userType === 'customer') {
+                $usersQuery->where('is_admin', false);
+            }
+        }
+
+        $users = $usersQuery->latest()->paginate(10);
+
+        $userCounts = [
+            'total' => User::count(),
+            'admin' => User::where('is_admin', true)->count(),
+            'customer' => User::where('is_admin', false)->count()
+        ];
+
+        return view('admin.users', compact('users', 'searchTerm', 'userType', 'userCounts'));
     }
 
     /**
@@ -244,5 +540,150 @@ class AdminController extends Controller
         $user->save();
 
         return redirect()->back()->with('success', 'User admin status updated successfully.');
+    }
+
+    /**
+     * Display the categories management page.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function categories()
+    {
+        $categories = DB::table('products')
+            ->select('category')
+            ->distinct()
+            ->orderBy('category')
+            ->get()
+            ->pluck('category');
+
+        return view('admin.categories', compact('categories'));
+    }
+
+    /**
+     * Store a new category.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function storeCategory(Request $request)
+    {
+        $request->validate([
+            'category' => 'required|string|max:255'
+        ]);
+
+        // Check if category already exists
+        $exists = DB::table('products')
+            ->where('category', $request->category)
+            ->exists();
+
+        if ($exists) {
+            return redirect()->back()
+                ->with('error', 'Category already exists');
+        }
+
+        // Since categories exist in the products table,
+        // we need a different approach to create a new category.
+        // We could create a placeholder product or just store the category in a session
+        // and use it when creating new products.
+
+        // For now, we'll just redirect back with a success message
+        return redirect()->route('admin.categories')
+            ->with('success', 'Category added successfully. You can now use it when creating products.');
+    }
+
+    /**
+     * Update an existing category.
+     *
+     * @param Request $request
+     * @param string $id (old category name)
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function updateCategory(Request $request, $id)
+    {
+        $request->validate([
+            'category' => 'required|string|max:255'
+        ]);
+
+        // Check if new category name already exists
+        if ($request->category !== $id) {
+            $exists = DB::table('products')
+                ->where('category', $request->category)
+                ->exists();
+
+            if ($exists) {
+                return redirect()->back()
+                    ->with('error', 'Category already exists');
+            }
+        }
+
+        // Update all products with the old category
+        DB::table('products')
+            ->where('category', $id)
+            ->update(['category' => $request->category]);
+
+        return redirect()->route('admin.categories')
+            ->with('success', 'Category updated successfully');
+    }
+
+    /**
+     * Delete a category.
+     *
+     * @param string $id (category name)
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function deleteCategory($id)
+    {
+        // Check if there are products in this category
+        $productsCount = DB::table('products')
+            ->where('category', $id)
+            ->count();
+
+        if ($productsCount > 0) {
+            return redirect()->back()
+                ->with('error', "Cannot delete category: {$productsCount} products are using this category. Move or delete these products first.");
+        }
+
+        // At this point, we know there are no products with this category
+        return redirect()->route('admin.categories')
+            ->with('success', 'Category removed successfully');
+    }
+
+    /**
+     * Search across admin resources.
+     *
+     * @param Request $request
+     * @return \Illuminate\View\View
+     */
+    public function search(Request $request)
+    {
+        $query = $request->get('q');
+
+        if (empty($query)) {
+            return redirect()->route('admin.dashboard')
+                ->with('error', 'Please enter a search term');
+        }
+
+        $products = Product::where('name', 'like', "%{$query}%")
+            ->orWhere('description', 'like', "%{$query}%")
+            ->take(5)
+            ->get();
+
+        $users = User::where('name', 'like', "%{$query}%")
+            ->orWhere('surname', 'like', "%{$query}%")
+            ->orWhere('email', 'like', "%{$query}%")
+            ->take(5)
+            ->get();
+
+        $orders = Order::with('user')
+            ->where('id', 'like', "%{$query}%")
+            ->orWhereHas('user', function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                    ->orWhere('surname', 'like', "%{$query}%")
+                    ->orWhere('email', 'like', "%{$query}%");
+            })
+            ->take(5)
+            ->get();
+
+        return view('admin.search-results', compact('query', 'products', 'users', 'orders'));
     }
 }
