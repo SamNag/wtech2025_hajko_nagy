@@ -308,6 +308,7 @@ This prototype is fully clickable and interactive.
 git clone https://github.com/SamNag/wtech2025_hajko_nagy.git
 cd flakes
 composer install
+npm install
 cp .env.example .env
 ```
 Configure your `.env` file with your database credentials:
