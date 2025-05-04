@@ -7,7 +7,7 @@
             <a href="{{ route('contact') }}" class="inconsolata-regular hover:text-gray-500 text-xl">Contact -</a>
         </div>
         <div class="hidden md:flex flex items-center space-x-4 mr-2">
-            <a href="{{ route('login') }}"
+            <a href="{{ Auth::check() ? (Auth::user()->is_admin ? route('admin') : route('profile')) : route('login') }}"
                class="classic-clicked flex items-center justify-center text-gray-600 font-bold rounded-lg h-12 w-12 fa-regular fa-user fa-lg"></a>
             <a href="{{ route('cart') }}"
                class="classic-clicked flex items-center justify-center text-gray-600 font-bold rounded-lg h-12 w-12 relative">

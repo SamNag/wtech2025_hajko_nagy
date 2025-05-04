@@ -89,47 +89,40 @@ Route::middleware('auth')->group(function () {
     })->middleware(['throttle:6,1'])->name('verification.send');
 });
 
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-    // Route-level admin check middleware
-    $adminCheck = function ($controller, $method, $parameters = []) {
-        return function () use ($controller, $method, $parameters) {
-            if (!auth()->user()->is_admin) {
-                return redirect()->route('home')->with('error', 'You do not have admin access.');
-            }
-            return app($controller)->$method(...$parameters);
-        };
-    };
+// First, create a separate middleware for admin check
+Route::middleware(['auth', 'admin'])->group(function () {
+    // Main admin dashboard
+    Route::get('/admin', [AdminController::class, 'index'])->name('admin');
 
-    // Dashboard
-    Route::get('/admin', $adminCheck(AdminController::class, 'index'))->name('admin');
+    // Admin prefixed routes
+    Route::prefix('admin')->name('admin.')->group(function () {
+        // User management
+        Route::get('/users', [AdminController::class, 'users'])->name('users');
+        Route::patch('/users/{id}/toggle-admin', [AdminController::class, 'toggleUserAdmin'])->name('users.toggle-admin');
 
-    // User management
-    Route::get('/users', $adminCheck(AdminController::class, 'users'))->name('users');
-    Route::patch('/users/{id}/toggle-admin', $adminCheck(AdminController::class, 'toggleUserAdmin', ['id']))->name('users.toggle-admin');
+        // Product management
+        Route::get('/products', [AdminController::class, 'products'])->name('products');
+        Route::get('/products/create', [AdminController::class, 'createProduct'])->name('products.create');
+        Route::post('/products', [AdminController::class, 'storeProduct'])->name('products.store');
+        Route::get('/products/{id}/edit', [AdminController::class, 'editProduct'])->name('products.edit');
+        Route::patch('/products/{id}', [AdminController::class, 'updateProduct'])->name('products.update');
+        Route::delete('/products/{id}', [AdminController::class, 'deleteProduct'])->name('products.delete');
 
-    // Product management
-    Route::get('/products', $adminCheck(AdminController::class, 'products'))->name('products');
-    Route::get('/products/create', $adminCheck(AdminController::class, 'createProduct'))->name('products.create');
-    Route::post('/products', $adminCheck(AdminController::class, 'storeProduct'))->name('products.store');
-    Route::get('/products/{id}/edit', $adminCheck(AdminController::class, 'editProduct', ['id']))->name('products.edit');
-    Route::patch('/products/{id}', $adminCheck(AdminController::class, 'updateProduct', ['id']))->name('products.update');
-    Route::delete('/products/{id}', $adminCheck(AdminController::class, 'deleteProduct', ['id']))->name('products.delete');
+        // Order management
+        Route::get('/orders', [AdminController::class, 'orders'])->name('orders');
+        Route::get('/orders/{id}', [AdminController::class, 'showOrder'])->name('orders.show');
+        Route::patch('/orders/{id}/status', [AdminController::class, 'updateOrderStatus'])->name('orders.update-status');
 
-    // Order management
-    Route::get('/orders', $adminCheck(AdminController::class, 'orders'))->name('orders');
-    Route::get('/orders/{id}', $adminCheck(AdminController::class, 'showOrder', ['id']))->name('orders.show');
-    Route::patch('/orders/{id}/status', $adminCheck(AdminController::class, 'updateOrderStatus', ['id']))->name('orders.update-status');
+        // Category management
+        Route::get('/categories', [AdminController::class, 'categories'])->name('categories');
+        Route::post('/categories', [AdminController::class, 'storeCategory'])->name('categories.store');
+        Route::put('/categories/{id}', [AdminController::class, 'updateCategory'])->name('categories.update');
+        Route::delete('/categories/{id}', [AdminController::class, 'deleteCategory'])->name('categories.delete');
 
-    // Category management (new)
-    Route::get('/categories', $adminCheck(AdminController::class, 'categories'))->name('categories');
-    Route::post('/categories', $adminCheck(AdminController::class, 'storeCategory'))->name('categories.store');
-    Route::put('/categories/{id}', $adminCheck(AdminController::class, 'updateCategory', ['id']))->name('categories.update');
-    Route::delete('/categories/{id}', $adminCheck(AdminController::class, 'deleteCategory', ['id']))->name('categories.delete');
-
-    // Search
-    Route::get('/search', $adminCheck(AdminController::class, 'search'))->name('search');
+        // Search
+        Route::get('/search', [AdminController::class, 'search'])->name('search');
+    });
 });
-
 
 // Auth routes (login, register, etc.)
 require __DIR__.'/auth.php';

@@ -204,7 +204,7 @@
                         <div class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 px-4 mt-8 product-card">
                             <div class="relative flex flex-col items-center product-card-body cursor-pointer">
                                 <div class="relative z-10 -mb-8 -mr-20">
-                                    <img src="{{ asset($product->image1) }}" alt="{{ $product->name }} "
+                                    <img src="{{ asset("storage/" . $product->image1) }}" alt="{{ $product->name }} "
                                          class="w-full h-32 lg:h-38 xl:h-44 object-contain opacity-[.85] hover:opacity-90 hover:scale-105 transition-transform duration-300">
                                 </div>
                                 <div class="bg-gradient-to-tl from-gray-300 to-gray-200 rounded-lg p-4 pt-6 max-w-xs w-full border border-slate-200 shadow-sm relative hover:shadow-md transition-all duration-300">

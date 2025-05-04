@@ -153,17 +153,26 @@ class AdminController extends Controller
             ->get();
     }
 
-    /**
-     * Display products management page.
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
-     */
     public function products(Request $request)
     {
-        $products = Product::with('packages')->paginate(10);
+        $query = Product::with('packages');
+
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                    ->orWhere('description', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+
+        $products = $query->paginate(10);
+
         return view('admin.products', compact('products'));
     }
+
 
     /**
      * Display form to create a new product.
@@ -187,8 +196,15 @@ class AdminController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
+    /**
+     * Store a new product.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function storeProduct(Request $request)
     {
+        // First, let's validate the structure we're receiving
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
@@ -206,11 +222,14 @@ class AdminController extends Controller
         DB::beginTransaction();
 
         try {
-            // Handle image uploads
-            $image1Path = $request->file('image1')->store('products', 'public');
-            $image2Path = $request->hasFile('image2')
-                ? $request->file('image2')->store('products', 'public')
-                : $image1Path;
+            // Handle image uploads to different directories
+            $image1Path = $request->file('image1')->store('assets/product_images/image', 'public');
+
+            // If there's a second image, store it in the package directory
+            $image2Path = null;
+            if ($request->hasFile('image2')) {
+                $image2Path = $request->file('image2')->store('assets/product_images/package', 'public');
+            }
 
             // Create product
             $product = Product::create([
@@ -218,16 +237,19 @@ class AdminController extends Controller
                 'description' => $validated['description'],
                 'category' => $validated['category'],
                 'image1' => $image1Path,
-                'image2' => $image2Path,
+                'image2' => $image2Path ?? $image1Path, // Fallback to image1 if no image2
             ]);
 
             // Add packages
             foreach ($validated['packages'] as $packageData) {
-                $product->packages()->create([
-                    'size' => $packageData['size'],
-                    'price' => $packageData['price'],
-                    'stock' => $packageData['stock'],
-                ]);
+                // Make sure we're getting the correct data structure
+                if (isset($packageData['size']) && isset($packageData['price']) && isset($packageData['stock'])) {
+                    $product->packages()->create([
+                        'size' => $packageData['size'],
+                        'price' => $packageData['price'],
+                        'stock' => $packageData['stock'],
+                    ]);
+                }
             }
 
             // Add tags
@@ -290,8 +312,10 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'category' => 'required|string|max:255',
-            'image1' => 'nullable|image|max:2048',
-            'image2' => 'nullable|image|max:2048',
+            'images' => 'nullable|array|max:2',
+            'images.*' => 'image|max:2048',
+            'remove_image1' => 'nullable|string',
+            'remove_image2' => 'nullable|string',
             'packages' => 'required|array|min:1',
             'packages.*.id' => 'nullable|string|exists:packages,id',
             'packages.*.size' => 'required|string|max:50',
@@ -306,63 +330,131 @@ class AdminController extends Controller
         DB::beginTransaction();
 
         try {
-            // Handle image uploads
-            if ($request->hasFile('image1')) {
-                // Delete old image
-                if ($product->image1 && Storage::disk('public')->exists($product->image1)) {
-                    Storage::disk('public')->delete($product->image1);
-                }
-                $product->image1 = $request->file('image1')->store('products', 'public');
+            $currentImage1 = $product->image1;
+            $currentImage2 = $product->image2;
+
+            $removeImage1 = $request->input('remove_image1') === '1';
+            $removeImage2 = $request->input('remove_image2') === '1';
+
+            // Initialize array for final images
+            $finalImages = [];
+
+            // Add existing images that are not marked for removal
+            if (!$removeImage1 && $currentImage1) {
+                $finalImages[] = $currentImage1;
+            }
+            if (!$removeImage2 && $currentImage2) {
+                $finalImages[] = $currentImage2;
             }
 
-            if ($request->hasFile('image2')) {
-                // Delete old image
-                if ($product->image2 && $product->image2 !== $product->image1 &&
-                    Storage::disk('public')->exists($product->image2)) {
-                    Storage::disk('public')->delete($product->image2);
+            // Process new uploaded images
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    // Determine directory based on current position
+                    $position = count($finalImages);
+                    $directory = $position === 0 ? 'assets/product_images/image' : 'assets/product_images/package';
+
+                    // Store the new image
+                    $path = $image->store($directory, 'public');
+                    $finalImages[] = $path;
                 }
-                $product->image2 = $request->file('image2')->store('products', 'public');
             }
 
-            // Update product
+            // Ensure we have at least one image
+            if (empty($finalImages)) {
+                DB::rollBack();
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Product must have at least one image.');
+            }
+
+            // Update product with new images
+            $product->image1 = $finalImages[0] ?? null;
+            $product->image2 = $finalImages[1] ?? null;
+
+            // Update other product fields
             $product->name = $validated['name'];
             $product->description = $validated['description'];
             $product->category = $validated['category'];
             $product->save();
 
-            // Handle packages - update existing, create new, remove deleted
-            $existingPackageIds = [];
+            // Now delete the old images if they were marked for removal
+            if ($removeImage1 && $currentImage1 && Storage::disk('public')->exists($currentImage1)) {
+                Storage::disk('public')->delete($currentImage1);
+            }
+            if ($removeImage2 && $currentImage2 && Storage::disk('public')->exists($currentImage2)) {
+                Storage::disk('public')->delete($currentImage2);
+            }
+
+            // Handle packages with duplicate checking
+            $processedPackageIds = [];
+            $mergedPackages = [];
 
             foreach ($validated['packages'] as $packageData) {
                 if (!empty($packageData['id'])) {
                     // Update existing package
                     $package = Package::findOrFail($packageData['id']);
-                    $package->size = $packageData['size'];
-                    $package->price = $packageData['price'];
-                    $package->stock = $packageData['stock'];
-                    $package->save();
 
-                    $existingPackageIds[] = $package->id;
+                    // Check if another package with the same size exists (excluding current package)
+                    $duplicatePackage = $product->packages()
+                        ->where('size', $packageData['size'])
+                        ->where('id', '!=', $package->id)
+                        ->first();
+
+                    if ($duplicatePackage) {
+                        // Merge with existing package
+                        $duplicatePackage->stock += $packageData['stock'];
+                        $duplicatePackage->price = $packageData['price'];
+                        $duplicatePackage->save();
+
+                        // Mark the current package for deletion
+                        $package->delete();
+
+                        $processedPackageIds[] = $duplicatePackage->id;
+                        $mergedPackages[] = $packageData['size'];
+                    } else {
+                        // No duplicate, update normally
+                        $package->size = $packageData['size'];
+                        $package->price = $packageData['price'];
+                        $package->stock = $packageData['stock'];
+                        $package->save();
+
+                        $processedPackageIds[] = $package->id;
+                    }
                 } else {
-                    // Create new package
-                    $package = $product->packages()->create([
-                        'size' => $packageData['size'],
-                        'price' => $packageData['price'],
-                        'stock' => $packageData['stock'],
-                    ]);
+                    // Check if a package with this size already exists
+                    $existingPackage = $product->packages()
+                        ->where('size', $packageData['size'])
+                        ->first();
 
-                    $existingPackageIds[] = $package->id;
+                    if ($existingPackage) {
+                        // Update existing package
+                        $existingPackage->stock += $packageData['stock'];
+                        $existingPackage->price = $packageData['price'];
+                        $existingPackage->save();
+
+                        $processedPackageIds[] = $existingPackage->id;
+                        $mergedPackages[] = $packageData['size'];
+                    } else {
+                        // Create new package
+                        $package = $product->packages()->create([
+                            'size' => $packageData['size'],
+                            'price' => $packageData['price'],
+                            'stock' => $packageData['stock'],
+                        ]);
+
+                        $processedPackageIds[] = $package->id;
+                    }
                 }
             }
 
             // Delete packages not in the list
             $product->packages()
-                ->whereNotIn('id', $existingPackageIds)
+                ->whereNotIn('id', $processedPackageIds)
                 ->delete();
 
-            // Update tags - delete all and recreate
+            // Update tags
             $product->tags()->delete();
-
             if (!empty($validated['tags'])) {
                 foreach ($validated['tags'] as $tagName) {
                     $product->tags()->create(['tag_name' => $tagName]);
@@ -371,8 +463,13 @@ class AdminController extends Controller
 
             DB::commit();
 
+            $message = 'Product updated successfully.';
+            if (!empty($mergedPackages)) {
+                $message .= ' Packages with sizes ' . implode(', ', $mergedPackages) . ' were merged.';
+            }
+
             return redirect()->route('admin.products')
-                ->with('success', 'Product updated successfully');
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
