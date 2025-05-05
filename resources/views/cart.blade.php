@@ -93,6 +93,10 @@
             // Set auth status on the body for cart manager
             document.body.setAttribute('data-auth', "{{ Auth::check() ? 'true' : 'false' }}");
 
+            // Store base URL for assets
+            const storageUrl = "{{ asset('storage/') }}";
+            const assetUrl = "{{ asset('') }}";
+
             // Load cart items
             loadCartItems();
 
@@ -103,7 +107,6 @@
                     const items = await window.cartManager.getCartItems();
 
                     console.log("Cart items:", items);
-                    console.log("Items length:", items.length);
 
                     // Clear loading placeholders
                     cartContainer.innerHTML = '';
@@ -115,7 +118,6 @@
                         console.log("Cart is empty, showing empty template");
                         // Show empty cart message
                         const template = document.getElementById('empty-cart-template');
-                        console.log("Empty template found:", template);
                         cartContainer.innerHTML = template.innerHTML;
 
                         // Hide checkout button
@@ -146,7 +148,24 @@
                         // Set values based on authenticated vs guest user
                         if ({{ Auth::check() ? 'true' : 'false' }}) {
                             productName.textContent = item.product.name;
-                            productImage.src = item.product.image;
+
+                            // FIX: Format image path similar to product-detail.blade.php
+                            // For logged-in users
+                            let imagePath = item.product.image;
+                            if (imagePath) {
+                                // If the path starts with "storage/" or has no path prefix
+                                if (imagePath.startsWith('storage/')) {
+                                    productImage.src = `${assetUrl}${imagePath}`;
+                                } else if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+                                    productImage.src = `${storageUrl}/${imagePath}`;
+                                } else {
+                                    productImage.src = imagePath;
+                                }
+                            } else {
+                                // Fallback image
+                                productImage.src = `${assetUrl}assets/images/product-placeholder.png`;
+                            }
+
                             productImage.alt = item.product.name;
                             packageSize.textContent = item.package.size;
                             quantity.textContent = item.quantity;
@@ -156,7 +175,24 @@
                             totalPrice += itemTotal;
                         } else {
                             productName.textContent = item.product_name;
-                            productImage.src = item.product_image;
+
+                            // FIX: Format image path similar to product-detail.blade.php
+                            // For guest users
+                            let imagePath = item.product_image;
+                            if (imagePath) {
+                                // If the path starts with "storage/" or has no path prefix
+                                if (imagePath.startsWith('storage/')) {
+                                    productImage.src = `${assetUrl}${imagePath}`;
+                                } else if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+                                    productImage.src = `${storageUrl}/${imagePath}`;
+                                } else {
+                                    productImage.src = imagePath;
+                                }
+                            } else {
+                                // Fallback image
+                                productImage.src = `${assetUrl}assets/images/product-placeholder.png`;
+                            }
+
                             productImage.alt = item.product_name;
                             packageSize.textContent = item.package_size;
                             quantity.textContent = item.quantity;
