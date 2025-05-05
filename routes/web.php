@@ -124,5 +124,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
     });
 });
 
+Route::get('/check-stock/{packageId}', [App\Http\Controllers\CartController::class, 'checkStock'])->name('check-stock');
 // Auth routes (login, register, etc.)
 require __DIR__.'/auth.php';

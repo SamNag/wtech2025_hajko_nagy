@@ -158,13 +158,19 @@ class CheckoutController extends Controller
 
             $order = Order::create($orderData);
 
-            // Create order items
+            // Create order items and decrease stock for each item
             foreach ($cartItems as $item) {
+                // Create order item
                 OrderItem::create([
                     'order_id' => $order->id,
                     'package_id' => $item->package->id,
                     'quantity' => $item->quantity,
                 ]);
+
+                // IMPORTANT: Reduce stock for each item
+                $package = Package::findOrFail($item->package->id);
+                $package->stock -= $item->quantity;
+                $package->save();
             }
 
             // Clear the cart

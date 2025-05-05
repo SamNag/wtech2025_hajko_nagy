@@ -1,4 +1,3 @@
-// Product Detail Page - No Visual Changes
 
 // Initialize variables
 let productDetail = 1;

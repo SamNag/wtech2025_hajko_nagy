@@ -35,6 +35,30 @@ class CartController extends Controller
     }
 
     /**
+     * Check if an item is in stock with the requested quantity.
+     *
+     * @param string $packageId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function checkStock($packageId)
+    {
+        try {
+            $package = Package::with('product')->findOrFail($packageId);
+
+            return response()->json([
+                'success' => true,
+                'stock' => $package->stock,
+                'product_name' => $package->product->name,
+                'package_size' => $package->size
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error checking stock'
+            ], 500);
+        }
+    }
+    /**
      * Get cart items for a logged-in user (API endpoint for AJAX).
      *
      * @return \Illuminate\Http\JsonResponse

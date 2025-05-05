@@ -100,6 +100,111 @@
             // Load cart items
             loadCartItems();
 
+            // Check stock before checkout
+            const checkoutBtn = document.getElementById('checkout-btn');
+            if (checkoutBtn) {
+                checkoutBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+
+                    // Show loading state
+                    const originalText = this.textContent;
+                    this.textContent = "Checking availability...";
+                    this.disabled = true;
+
+                    // Validate stock
+                    const isStockValid = await validateCartStock();
+
+                    // Reset button
+                    this.textContent = originalText;
+                    this.disabled = false;
+
+                    if (isStockValid) {
+                        // Proceed to checkout
+                        window.location.href = "{{ route('checkout') }}";
+                    }
+                });
+            }
+
+            // Validation function
+            async function validateCartStock() {
+                try {
+                    // Get current cart items
+                    const cartItems = await window.cartManager.getCartItems();
+
+                    if (!cartItems || cartItems.length === 0) {
+                        showStockAlert("Your cart is empty", "Please add items before proceeding to checkout.");
+                        return false;
+                    }
+
+                    // Check stock for each item
+                    for (const item of cartItems) {
+                        const packageId = item.package_id;
+                        const quantity = item.quantity;
+
+                        // Make request to check stock
+                        const response = await fetch(`/check-stock/${packageId}`);
+
+                        if (!response.ok) {
+                            throw new Error('Failed to check stock');
+                        }
+
+                        const data = await response.json();
+
+                        if (!data.success) {
+                            showStockAlert("Error", "Could not verify product availability. Please try again.");
+                            return false;
+                        }
+
+                        if (quantity > data.stock) {
+                            const productName = item.product ? item.product.name : data.product_name;
+                            const packageSize = item.package ? item.package.size : data.package_size;
+
+                            showStockAlert("Limited Stock",
+                                `Sorry, only ${data.stock} units of ${productName} (${packageSize}) are available.`);
+                            return false;
+                        }
+                    }
+
+                    // All items are in stock
+                    return true;
+                } catch (error) {
+                    console.error('Error validating cart:', error);
+                    showStockAlert("Error", "Could not check product availability. Please try again later.");
+                    return false;
+                }
+            }
+
+            // Nice alert function with title
+            function showStockAlert(title, message) {
+                // Create modal container
+                const modal = document.createElement('div');
+                modal.className = 'fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50';
+
+                // Create modal content
+                modal.innerHTML = `
+            <div class="bg-gray-200 p-6 rounded-lg shadow-xl max-w-md mx-auto">
+                <div class="text-red-500 text-xl mb-4">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    ${title}
+                </div>
+                <p class="text-gray-700 mb-4">${message}</p>
+                <div class="flex justify-end">
+                    <button class="classic-clicked text-lg inconsolata-bold text-black rounded-lg px-4 py-2">
+                        OK
+                    </button>
+                </div>
+            </div>
+        `;
+
+                // Add to body
+                document.body.appendChild(modal);
+
+                // Close on button click
+                modal.querySelector('button').addEventListener('click', () => {
+                    modal.remove();
+                });
+            }
+
             // Function to load cart items from server or localStorage
             async function loadCartItems() {
                 try {
@@ -126,6 +231,12 @@
                     } else {
                         document.getElementById('checkout-btn').parentElement.classList.remove('hidden');
                     }
+
+                    items.sort((a, b) => {
+                        const nameA = a.product ? a.product.name : a.product_name;
+                        const nameB = b.product ? b.product.name : b.product_name;
+                        return nameA.localeCompare(nameB);
+                    });
 
                     // Show each cart item
                     const template = document.getElementById('cart-item-template');
