@@ -139,7 +139,7 @@ class CartController extends Controller
                         $existingItem->save();
                         Log::info('Updated existing cart item', ['item_id' => $existingItem->id, 'new_quantity' => $existingItem->quantity]);
                     } else {
-                        // Create new cart item without timestamps
+                        // Create new cart item
                         $cartItem = new CartItem([
                             'user_id' => Auth::id(),
                             'package_id' => $packageId,

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('user_id');
             $table->uuid('address_id');
             $table->enum('payment', ['cash', 'card']);
-            $table->enum('status', ['created', 'canceled', 'shipped', 'delivered']);
+            $table->enum('status', ['created', 'canceled', 'shipped', 'delivered','processing']);
             $table->timestamp('created_at')->useCurrent();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

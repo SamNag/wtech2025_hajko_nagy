@@ -5,9 +5,6 @@
 @section('extra-css')
     <style>
         /* Product-specific styles */
-        .preview-image {
-            transition: transform 0.3s ease;
-        }
         .product-card:hover .preview-image {
             transform: scale(1.05);
         }

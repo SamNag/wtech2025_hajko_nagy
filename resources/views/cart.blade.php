@@ -174,7 +174,7 @@
                 }
             }
 
-            // Nice alert function with title
+            // Alert function with title
             function showStockAlert(title, message) {
                 // Create modal container
                 const modal = document.createElement('div');
@@ -232,10 +232,33 @@
                         document.getElementById('checkout-btn').parentElement.classList.remove('hidden');
                     }
 
+                    // Sort items alphabetically by product name and then by package size
                     items.sort((a, b) => {
+                        // First sort by product name
                         const nameA = a.product ? a.product.name : a.product_name;
                         const nameB = b.product ? b.product.name : b.product_name;
-                        return nameA.localeCompare(nameB);
+
+                        // If product names are different, sort by name
+                        const nameComparison = nameA.localeCompare(nameB);
+                        if (nameComparison !== 0) {
+                            return nameComparison;
+                        }
+
+                        // If product names are the same, sort by package size
+                        const sizeA = a.package ? a.package.size : a.package_size;
+                        const sizeB = b.package ? b.package.size : b.package_size;
+
+                        // Try to extract numeric values for proper sorting (e.g., "30pcs" → 30)
+                        const numericA = parseInt(sizeA.match(/\d+/)?.[0] || '0');
+                        const numericB = parseInt(sizeB.match(/\d+/)?.[0] || '0');
+
+                        // If both have valid numeric parts, compare those
+                        if (!isNaN(numericA) && !isNaN(numericB)) {
+                            return numericA - numericB;
+                        }
+
+                        // Otherwise, just compare the strings
+                        return sizeA.localeCompare(sizeB);
                     });
 
                     // Show each cart item
@@ -287,7 +310,6 @@
                         } else {
                             productName.textContent = item.product_name;
 
-                            // FIX: Format image path similar to product-detail.blade.php
                             // For guest users
                             let imagePath = item.product_image;
                             if (imagePath) {
@@ -301,7 +323,7 @@
                                 }
                             } else {
                                 // Fallback image
-                                productImage.src = `${assetUrl}assets/images/product-placeholder.png`;
+                                productImage.src = `${assetUrl}assets/icon.png`;
                             }
 
                             productImage.alt = item.product_name;

@@ -71,18 +71,13 @@ The physical data model includes tables for users, products, categories, orders,
 
 3. **External Libraries:**
     - **Tailwind CSS:** For rapid UI development with utility-first approach (installed via npm)
-    - **Alpine.js:** For lightweight JavaScript interactivity
     - **Chart.js (via CDN):** For admin dashboard visualizations
     - **Font Awesome:** For consistent iconography
-    - **Axios:** For making HTTP requests in JavaScript
-    - **Vite:** For modern frontend build tooling and hot module replacement
-    - **Laravel Vite Plugin:** For integrating Vite with Laravel
-    - **PostCSS & Autoprefixer:** For processing CSS with browser compatibility
-
+   
 4. **Guest Checkout:**
     - Implemented guest checkout functionality without requiring registration
     - Guest orders stored with contact information directly in orders table
-    - Decision: Reduces friction in purchasing process
+
 
 ### Programming Environment
 
@@ -92,30 +87,13 @@ The physical data model includes tables for users, products, categories, orders,
 - **Development Tools:**
     - Composer for PHP dependencies
     - Laravel's built-in server for development
-    - No build process required (CDN approach)
+    - Build process with npm for asset compilation
 
 ### Implementation Details
+Some snippets of the code are provided below to illustrate the implementation of key features.
 
-#### 1. Product Quantity Management
-```php
-public function update(Request $request)
-{
-    $validated = $request->validate([
-        'item_id' => 'required|string',
-        'quantity' => 'required|integer|min:1'
-    ]);
-    
-    // Update quantity in database
-    $cartItem = CartItem::where('user_id', Auth::id())
-        ->where('id', $itemId)
-        ->firstOrFail();
-    
-    $cartItem->quantity = $quantity;
-    $cartItem->save();
-}
-```
-
-#### 2. User Authentication
+#### 1. User Authentication
+The authentication system is built using Laravel's built-in features. The `auth` middleware is used to protect routes and ensure that only authenticated users can access certain pages.
 ```php
 Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::get('/', function (Request $request) {
@@ -127,7 +105,8 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
 });
 ```
 
-#### 3. Product Search
+#### 2. Product Search
+The search functionality allows users to find products by name, description, or tags. The search is case-insensitive and uses a wildcard search for partial matches.
 ```php
 if ($request->has('search') && !empty($request->search)) {
     $searchTerm = $request->search;
@@ -141,42 +120,76 @@ if ($request->has('search') && !empty($request->search)) {
 }
 ```
 
-#### 4. Add to Cart
+#### 3. Checking stock availability before checkout
+Before allowing a user to proceed with checkout, the system checks whether the requested quantity of each item is available in stock.
+
+**API Route to Check Stock**
+```php
+Route::get('/check-stock/{packageId}', [App\Http\Controllers\CartController::class, 'checkStock'])->name('check-stock');
+````
+**Frontend Logic (JavaScript)**
 ```javascript
-async addToCart(packageId, quantity) {
-    try {
-        const response = await fetch('/cart/add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': this.csrfToken
-            },
-            body: JSON.stringify({
-                package_id: packageId,
-                quantity: quantity
-            })
-        });
-        
-        if (!response.ok) throw new Error('Failed to add item to cart');
-        
-        const data = await response.json();
-        this.updateCartCountDisplay(data.cart_count);
-        
-        return { success: true, message: data.message };
-    } catch (error) {
-        console.error('Error adding to cart:', error);
-        return { success: false, message: 'Failed to add item to cart' };
+// Check stock for each item
+for (const item of cartItems) {
+    const packageId = item.package_id;
+    const quantity = item.quantity;
+
+    // Make request to check stock
+    const response = await fetch(`/check-stock/${packageId}`);
+
+    if (!response.ok) {
+        throw new Error('Failed to check stock');
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+        showStockAlert("Error", "Could not verify product availability. Please try again.");
+        return false;
+    }
+
+    if (quantity > data.stock) {
+        const productName = item.product ? item.product.name : data.product_name;
+        const packageSize = item.package ? item.package.size : data.package_size;
+
+        showStockAlert("Limited Stock",
+            `Sorry, only ${data.stock} units of ${productName} (${packageSize}) are available.`);
+        return false;
     }
 }
 ```
+**Backend:** ```checkStock()``` **Method in** ```CartController```
+```php
+public function checkStock($packageId)
+    {
+        try {
+            $package = Package::with('product')->findOrFail($packageId);
+
+            return response()->json([
+                'success' => true,
+                'stock' => $package->stock,
+                'product_name' => $package->product->name,
+                'package_size' => $package->size
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error checking stock'
+            ], 500);
+        }
+    }
+```
+
 
 #### 5. Pagination
+The product listing page uses Laravel's built-in pagination to display products in a user-friendly manner. The pagination links are styled with Tailwind CSS for a consistent look and feel.
 ```php
 $products = $query->paginate(12);
 return view('products', compact('products', 'availableTags', 'availablePackages', 'minPrice', 'maxPrice'));
 ```
 
 #### 6. Basic Filtering
+The filtering system allows users to filter products by category and price range. The filters are applied dynamically based on user input.
 ```php
 // Apply category filter
 if ($request->has('category') && $request->category != 'all') {
@@ -292,14 +305,19 @@ This prototype is fully clickable and interactive.
 
 ## Features
 
-- User registration and authentication
-- Product browsing and search
-- Dynamic filtering and pagination
-- Guest and authenticated cart management
-- Order placement with or without account
-- Admin dashboard with charts, statistics, and product management
-- Responsive design for mobile and desktop
+- User registration and **authentication**
+- Product browsing and **search**
+- **Dynamic filtering** and pagination
+- **Guest** and authenticated cart management
+- **Order placement** with or without account
+- **Admin dashboard** with charts, statistics, and product management
+- **Responsive design** for mobile and desktop
 
+---
+## Conclusion
+After few iterations, we have created a fully functional e-shop with a focus on health products. The project showcases our ability to integrate frontend and backend technologies, implement user-friendly features, and create an engaging user experience.
+As you can see, the project have main features of e-shop, so there is a possibility to extend it with more features in the future.
+In our way, we changed some project design decisions after the first phase based on our testing.
 ---
 
 ## Installation
@@ -336,16 +354,37 @@ Run the compiled assets:
 ```bash
 npm run dev
 ```
+After running seeders, items, fake orders, and users will be created. You can log in with the following credentials:
+
+**For admin:**
+
+email: ```admin@flakes.com```
+
+password: ```password```
+
+**For regular user:**
+
+email: ```user@flakes.com```
+
+password: ```password```
+
+---
+### Preconditions
+- **PostgreSQL** database server is installed and running
+- **PHP 8.2** and **Composer** are installed
+- **Node.js** and **npm** are installed
+- **Laravel 11** is installed globally (optional, but recommended for development)
 ---
 
 ## Technologies Used
 
 - Laravel 11 (PHP 8.2)
 - PostgreSQL
-- Tailwind CSS (via CDN)
-- Chart.js (via CDN)
+- Tailwind CSS ```https://tailwindcss.com/```
 - JavaScript, HTML, CSS
-
+- Chart.js (CDN) ```https://cdn.jsdelivr.net/npm/chart.js```
+- Font Awesome (CDN) ```https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css```
+- Animated dropdown menu (CDN) ```https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css```
 ---
 
 ## Authors

@@ -292,7 +292,7 @@ class AdminController extends Controller
         $product = Product::with(['packages', 'tags'])->findOrFail($id);
         $categories = DB::table('products')
             ->select('category')
-            ->distinct()
+            ->distinct() // Get distinct categories, no duplicates
             ->orderBy('category')
             ->pluck('category');
 

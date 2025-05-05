@@ -4,12 +4,6 @@
 
 @section('body-class', '')
 
-@section('extra-css')
-    <style>
-        /* Any home-specific styles can go here */
-    </style>
-@endsection
-
 @section('pre-header')
     <!-- Special transparent header for home page that overrides the default header -->
     <header class="px-4 pb-4 bg-transparent absolute top-0 left-0 w-full z-50 bg-transparent">

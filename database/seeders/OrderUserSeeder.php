@@ -72,17 +72,17 @@ class OrderUserSeeder extends Seeder
         }
 
         // Create orders with dates from the last 7 days including today
-        $statuses = ['created', 'shipped', 'delivered'];
+        $statuses = ['created', 'shipped', 'delivered', 'canceled', 'processing'];
         $paymentMethods = ['card', 'cash'];
         $deliveryTypes = ['ups', 'fedex', 'dhl'];
 
-        // Create 20 orders total, distributed over the past 7 days including today
+        // Create orders, distributed over the past 7 days including today
         for ($dayOffset = 0; $dayOffset <= 7; $dayOffset++) {
             // Calculate the date
             $orderDate = Carbon::now()->subDays($dayOffset);
 
-            // Create more orders for recent days (3-4 orders per day for recent days, 1-2 for older days)
-            $numOrders = $dayOffset <= 3 ? rand(3, 4) : rand(1, 2);
+            // Create more orders for recent days (5-10 orders per day for recent days, 2-4 for older days)
+            $numOrders = $dayOffset <= 3 ? rand(5, 10) : rand(2, 4);
 
             for ($i = 0; $i < $numOrders; $i++) {
                 // Alternate between users, slightly more orders for regular user

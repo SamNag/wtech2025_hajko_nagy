@@ -196,7 +196,7 @@
             .custom-text { text-align: start; }
             .custom-margin {margin-top: 1rem; }
         }
-        @media (min-width: 428px) {
+        @media (min-width: 427px) {
             .custom-text { text-align: end; }
             .custom-margin {margin-top: 1.5rem; }
         }

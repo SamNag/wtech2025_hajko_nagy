@@ -35,10 +35,6 @@ class CheckoutController extends Controller
             foreach ($cartItems as $item) {
                 $subtotal += $item->package->price * $item->quantity;
             }
-        } else {
-            // Guest user - get cart from session/localStorage via AJAX
-            // The actual cart items will be loaded client-side
-            // We just need to pass the view for now
         }
 
         // Set fixed shipping fee
