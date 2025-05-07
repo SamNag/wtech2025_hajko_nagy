@@ -106,7 +106,7 @@
                         </div>
                         <div class="flex gap-2">
                             <input type="text" id="tag-input"
-                                   class="flex-1 bg-gray-200 border border-gray-300 p-2 rounded-lg"
+                                   class="min-w-0 sm:flex-1 bg-gray-200 border border-gray-300 p-2 rounded-lg"
                                    placeholder="Add a tag (e.g., 'skin', 'hair', 'bones')">
                             <button type="button" onclick="addTag()"
                                     class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg">
@@ -143,6 +143,16 @@
 
                 // Add one empty package by default
                 addPackage();
+
+                // Add this form submit validation
+                document.getElementById('product-form').addEventListener('submit', function(e) {
+                    const selectedImages = document.getElementById('selected-images').children.length;
+
+                    if (selectedImages < 2) {
+                        e.preventDefault(); // Stop form from submitting
+                        alert('Please upload at least two images.');
+                    }
+                });
 
                 // Listen for category changes
                 document.getElementById('product-category').addEventListener('change', updatePackageOptions);
@@ -317,13 +327,13 @@
                 </button>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm text-gray-700 mb-1">Package Size</label>
-                        <select name="packages[${packageCount}][size]" class="w-full bg-gray-200 border border-gray-300 p-2 rounded-lg" required>
+                        <label class="block text-sm text-gray-700 mb-1 h-1/2 sm:h-auto">Package Size</label>
+                        <select name="packages[${packageCount}][size]" class="sm:h-auto bg-gray-200 border border-gray-300 p-2 rounded-lg" required>
                             ${getPackageOptions(category)}
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm text-gray-700 mb-1">Price (€)</label>
+                        <label class="block text-sm text-gray-700 mb-1 h-1/2 sm:h-auto">Price (€)</label>
                         <input type="number" name="packages[${packageCount}][price]" step="0.01" min="0" required
                                class="w-full bg-gray-200 border border-gray-300 p-2 rounded-lg"
                                placeholder="0.00">

@@ -106,7 +106,7 @@
                                class="inconsolata-regular w-full h-10 sm:h-12 sm:flex-1 sm:basis-1/3 sm:max-w-1/3 px-3 py-2 text-gray-700 border rounded-lg bg-gray-200 focus:outline-gray-100 border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 border-gray-300">
 
                         <div class="sm:hidden w-full mt-4 flex justify-center">
-                            <button type="submit" class="inconsolata-bold text-gray-700 text-lg w-40 h-12 rounded-lg px-4 py-2 classic-clicked">
+                            <button type="submit" class="inconsolata-bold text-gray-700 text-md md:text-lg w-40 h-12 rounded-lg px-4 py-2 classic-clicked">
                                 Change Password
                             </button>
                         </div>

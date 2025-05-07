@@ -137,7 +137,7 @@
                         </div>
                         <div class="flex gap-2">
                             <input type="text" id="tag-input"
-                                   class="flex-1 bg-gray-200 border border-gray-300 p-2 rounded-lg"
+                                   class="flex-1 min-w-0 bg-gray-200 border border-gray-300 p-2 rounded-lg"
                                    placeholder="Add a tag (e.g., 'skin', 'hair', 'bones')">
                             <button type="button" onclick="addTag()"
                                     class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg">
@@ -301,9 +301,9 @@
                 const existingImages = document.querySelectorAll('#image-upload-form > div[data-existing]:not(.hidden)').length;
                 const newImages = document.getElementById('selected-images').children.length;
 
-                if (existingImages === 0 && newImages === 0) {
+                if ((existingImages === 0 || existingImages === 1) && newImages === 0) {
                     e.preventDefault();
-                    alert('Product must have at least one image.');
+                    alert('Product must have two images.');
                     return false;
                 }
 
@@ -326,7 +326,7 @@
                 const dropZone = document.getElementById("drop-zone");
                 const selectedFilesCount = document.getElementById("selected-files-count");
 
-                selectedFilesCount.textContent = totalImageCount > 0 ? `${totalImageCount} file${totalImageCount === 1 ? "" : "s"} selected` : "";
+                selectedFilesCount.textContent = totalImageCount > 0 ? `${totalImageCount} file${totalImageCount === 2 ? "" : "s"} selected` : "";
 
                 if (totalImageCount >= MAX_IMAGES) {
                     dropZone.classList.add("hidden");
@@ -403,13 +403,13 @@
                 </button>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm text-gray-700 mb-1">Package Size</label>
+                        <label class="block text-sm text-gray-700 mb-1 h-1/2 sm:h-auto">Package Size</label>
                         <select name="packages[${packageCount}][size]" class="w-full bg-gray-200 border border-gray-300 p-2 rounded-lg" required>
                             ${getPackageOptions(category, package?.size)}
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm text-gray-700 mb-1">Price (€)</label>
+                        <label class="block text-sm text-gray-700 mb-1 h-1/2 sm:h-auto">Price (€)</label>
                         <input type="number" name="packages[${packageCount}][price]" step="0.01" min="0" required
                                class="w-full bg-gray-200 border border-gray-300 p-2 rounded-lg"
                                value="${package?.price || ''}"
