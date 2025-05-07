@@ -315,9 +315,11 @@ This prototype is fully clickable and interactive.
 
 ---
 ## Conclusion
+
 After few iterations, we have created a fully functional e-shop with a focus on health products. The project showcases our ability to integrate frontend and backend technologies, implement user-friendly features, and create an engaging user experience.
 As you can see, the project have main features of e-shop, so there is a possibility to extend it with more features in the future.
 In our way, we changed some project design decisions after the first phase based on our testing.
+
 ---
 
 ## Installation
@@ -346,6 +348,10 @@ Run the migrations and seed the database:
 ```bash
 php artisan migrate --seed
 ```
+Run command for storage link:
+```bash
+php artisan storage:link
+```
 Run the Laravel server:
 ```bash
 php artisan serve
@@ -373,7 +379,7 @@ password: ```password```
 - **PostgreSQL** database server is installed and running
 - **PHP 8.2** and **Composer** are installed
 - **Node.js** and **npm** are installed
-- **Laravel 11** is installed globally (optional, but recommended for development)
+- **Laravel 11** is installed globally 
 ---
 
 ## Technologies Used
