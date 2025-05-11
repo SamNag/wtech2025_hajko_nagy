@@ -73,6 +73,7 @@ The physical data model includes tables for users, products, categories, orders,
     - **Tailwind CSS:** For rapid UI development with utility-first approach (installed via npm)
     - **Chart.js (via CDN):** For admin dashboard visualizations
     - **Font Awesome:** For consistent iconography
+    - **Animations** (CDN) animate.style
    
 4. **Guest Checkout:**
     - Implemented guest checkout functionality without requiring registration
@@ -82,7 +83,7 @@ The physical data model includes tables for users, products, categories, orders,
 ### Programming Environment
 
 - **Backend:** PHP 8.2 with Laravel 11.x
-- **Frontend:** Vanilla JavaScript with CDN libraries
+- **Frontend:** Vanilla JavaScript with libraries
 - **Database:** PostgreSQL
 - **Development Tools:**
     - Composer for PHP dependencies
@@ -324,9 +325,17 @@ In our way, we changed some project design decisions after the first phase based
 
 ## Installation
 
+---
+### Preconditions
+- **PostgreSQL** database server is installed and running
+- **PHP 8.2** and **Composer** are installed
+- **Node.js** and **npm** are installed
+- **Laravel 11** 
+---
+
 ```bash
 git clone https://github.com/SamNag/wtech2025_hajko_nagy.git
-cd flakes
+cd wtech2025_hajko_nagy
 composer install
 npm install
 cp .env.example .env
@@ -336,7 +345,7 @@ Configure your `.env` file with your database credentials:
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
 DB_PORT=5432
-DB_DATABASE=flakes_db
+DB_DATABASE=db_name
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
 ```
@@ -360,7 +369,7 @@ Run the compiled assets:
 ```bash
 npm run dev
 ```
-After running seeders, items, fake orders, and users will be created. You can log in with the following credentials:
+After running seeders, items, sample orders, and users will be created. You can log in with the following credentials:
 
 **For admin:**
 
@@ -373,14 +382,6 @@ password: ```password```
 email: ```user@flakes.com```
 
 password: ```password```
-
----
-### Preconditions
-- **PostgreSQL** database server is installed and running
-- **PHP 8.2** and **Composer** are installed
-- **Node.js** and **npm** are installed
-- **Laravel 11** is installed globally 
----
 
 ## Technologies Used
 
