@@ -334,8 +334,8 @@ In our way, we changed some project design decisions after the first phase based
 ---
 
 ```bash
-git clone https://github.com/SamNag/wtech2025_hajko_nagy.git
-cd wtech2025_hajko_nagy
+git clone https://github.com/SamNag/flakes.git
+cd flakes
 composer install
 npm install
 cp .env.example .env
